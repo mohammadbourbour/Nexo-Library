@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import "react-pdf/dist/esm/Page/TextLayer.css";
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
 // تنظیم worker برای react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
