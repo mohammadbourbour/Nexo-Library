@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authService } from "@/services/authService";
 
 interface User {
   id: string;
@@ -11,8 +12,9 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
 }
 
@@ -20,74 +22,72 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // بارگذاری کاربر از localStorage در شروع
+  // Verify token on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const verifyAuth = async () => {
+      const token = authService.getToken();
+      if (token) {
+        const result = await authService.verifyToken(token);
+        if (result.valid && result.user) {
+          setUser(result.user);
+        } else {
+          // Invalid token, clear it
+          await authService.logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    verifyAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // این قسمت رو باید به API پایتون وصل کنی
-    // برای تست، یک ادمین پیش‌فرض داریم
     try {
-      // اینجا باید درخواست به بک‌اند پایتون بفرستی
-      // const response = await fetch('YOUR_PYTHON_API/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      // const data = await response.json();
-
-      // برای تست:
-      if (email === "admin@library.com" && password === "admin123") {
-        const userData: User = {
-          id: "1",
-          email,
-          name: "مدیر سیستم",
-          role: "admin",
-        };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
+      const result = await authService.login(email, password);
+      
+      if (result.success && result.user) {
+        setUser(result.user);
         return { success: true };
       }
 
-      return { success: false, error: "ایمیل یا رمز عبور اشتباه است" };
+      return {
+        success: false,
+        error: result.error || "خطا در ورود به سیستم",
+      };
     } catch (error) {
-      return { success: false, error: "خطا در برقراری ارتباط با سرور" };
+      return {
+        success: false,
+        error: "خطا در برقراری ارتباط با سرور",
+      };
     }
   };
 
   const signup = async (email: string, password: string, name: string) => {
-    // این قسمت رو باید به API پایتون وصل کنی
     try {
-      // const response = await fetch('YOUR_PYTHON_API/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password, name })
-      // });
-      // const data = await response.json();
+      const result = await authService.signup(email, password, name);
+      
+      if (result.success && result.user) {
+        setUser(result.user);
+        return { success: true };
+      }
 
-      // برای تست:
-      const userData: User = {
-        id: Date.now().toString(),
-        email,
-        name,
-        role: "user",
+      return {
+        success: false,
+        error: result.error || "خطا در ثبت‌نام",
       };
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-      return { success: true };
     } catch (error) {
-      return { success: false, error: "خطا در ثبت‌نام" };
+      return {
+        success: false,
+        error: "خطا در برقراری ارتباط با سرور",
+      };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
-    localStorage.removeItem("user");
   };
 
   return (
@@ -96,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user,
         isAuthenticated: !!user,
         isAdmin: user?.role === "admin",
+        loading,
         login,
         logout,
         signup,
