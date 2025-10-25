@@ -1,27 +1,36 @@
-// API Configuration
-// Set your Python backend URL here
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export const API_ENDPOINTS = {
-  // Authentication
   LOGIN: '/api/auth/login',
   SIGNUP: '/api/auth/signup',
   LOGOUT: '/api/auth/logout',
   VERIFY_TOKEN: '/api/auth/verify',
-  
-  // Books
   BOOKS: '/api/books',
   BOOK_BY_ID: (id: string) => `/api/books/${id}`,
   BOOK_PDF: (id: string) => `/api/books/${id}/pdf`,
-  
-  // Categories
-  CATEGORIES: '/api/categories',
-  
-  // Admin
-  ADMIN_BOOKS: '/api/admin/books',
   ADMIN_BOOK_CREATE: '/api/admin/books/create',
-  ADMIN_BOOK_UPDATE: (id: string) => `/api/admin/books/${id}`,
-  ADMIN_BOOK_DELETE: (id: string) => `/api/admin/books/${id}`,
-  ADMIN_UPLOAD_PDF: '/api/admin/upload/pdf',
-  ADMIN_UPLOAD_COVER: '/api/admin/upload/cover',
+  // بقیه endpoint ها
 };
+
+export async function request(
+  endpoint: string,
+  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
+  data?: any,
+  token?: string
+) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers,
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text);
+  }
+
+  return res.json();
+}
