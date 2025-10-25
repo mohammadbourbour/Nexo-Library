@@ -7,8 +7,12 @@ from app.schemas.schemas import BookCreate, BookUpdate
 # -------------------------
 # دریافت همه کتاب‌ها
 # -------------------------
-def get_books(db: Session) -> List[Book]:
-    return db.query(Book).order_by(Book.created_at.desc()).all()
+def get_books(db: Session, category_id: Optional[str] = None) -> List[Book]:
+    query = db.query(Book)
+    if category_id:
+        query = query.filter(Book.category_id == category_id)
+    return query.order_by(Book.created_at.desc()).all()
+
 
 
 # -------------------------

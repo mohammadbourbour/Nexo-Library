@@ -60,37 +60,47 @@ class AuthService {
     localStorage.removeItem('auth_token');
   }
 
-  async login(email: string, password: string): Promise<LoginResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify({ email, password }),
-      });
+ async login(username: string, password: string): Promise<LoginResponse> {
+  try {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
 
-      const data = await response.json();
+    const authToken = this.getStoredToken();
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
-      if (response.ok && data.token) {
-        this.setStoredToken(data.token);
-        return {
-          success: true,
-          token: data.token,
-          user: data.user,
-        };
-      }
+    const body = new URLSearchParams({ username, password }).toString();
 
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.token) {
+      this.setStoredToken(data.token);
       return {
-        success: false,
-        error: data.message || 'خطا در ورود به سیستم',
-      };
-    } catch (error) {
-      console.error('Login error:', error);
-      return {
-        success: false,
-        error: 'خطا در برقراری ارتباط با سرور',
+        success: true,
+        token: data.token,
+        user: data.user,
       };
     }
+
+    return {
+      success: false,
+      error: data.message || 'خطا در ورود به سیستم',
+    };
+  } catch (error) {
+    console.error('Login error:', error);
+    return {
+      success: false,
+      error: 'خطا در برقراری ارتباط با سرور',
+    };
   }
+}
+
 
   async signup(email: string, password: string, name: string): Promise<SignupResponse> {
     try {

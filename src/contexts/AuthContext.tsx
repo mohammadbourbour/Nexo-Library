@@ -13,7 +13,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -43,9 +43,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     verifyAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      const result = await authService.login(email, password);
+      const result = await authService.login(username, password);
       
       if (result.success && result.user) {
         setUser(result.user);

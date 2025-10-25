@@ -63,3 +63,24 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True  # pydantic v2 جایگزین orm_mode
+
+
+# -------------------------
+# Category Schemas
+# -------------------------
+class CategoryBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class CategoryCreate(CategoryBase):
+    pass
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+class CategoryOut(CategoryBase):
+    id: str
+
+    class Config:
+        orm_mode = True

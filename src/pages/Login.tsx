@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,34 +14,43 @@ const Login = () => {
   const { login, signup, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [signupData, setSignupData] = useState({ email: "", password: "", name: "" });
   const [loading, setLoading] = useState(false);
 
   // اگر کاربر لاگین باشه به صفحه اصلی برگردون
-  if (isAuthenticated) {
-    navigate("/");
+ const { user } = useAuth();
+
+useEffect(() => {
+  if (isAuthenticated && user) {
+    if (user.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
   }
+}, [isAuthenticated, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const result = await login(loginData.email, loginData.password);
+    const result: { success: boolean; error?: string; user?: { role: string } } = await login(loginData.username, loginData.password);
     
     setLoading(false);
 
-    if (result.success) {
-      toast({
-        title: "خوش آمدید",
-        description: "با موفقیت وارد شدید",
-      });
-      navigate("/");
-    } else {
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: result.error || "خطا در ورود",
+if (result.success) {
+  toast({ title: "خوش آمدید", description: "با موفقیت وارد شدید" });
+  if (result.user?.role === "admin") {
+    navigate("/admin");
+  } else {
+    navigate("/");
+  }
+} else {
+  toast({
+    variant: "destructive",
+    title: "خطا",
+    description: result.error || "خطا در ورود",
       });
     }
   };
@@ -107,8 +116,8 @@ const Login = () => {
                         type="email"
                         placeholder="example@university.edu"
                         className="pr-10"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                        value={loginData.username}
+                        onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
                         required
                       />
                     </div>
@@ -128,12 +137,6 @@ const Login = () => {
                         required
                       />
                     </div>
-                  </div>
-
-                  <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">
-                    <p className="font-medium mb-1">💡 برای تست:</p>
-                    <p>ایمیل: admin@library.com</p>
-                    <p>رمز: admin123</p>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={loading}>

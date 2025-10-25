@@ -6,17 +6,14 @@ from app.schemas.schemas import BookCreate, BookUpdate, BookOut
 from app.crud.crud_books import create_book, get_books, get_book_by_id, update_book, delete_book
 from app.deps import get_db, get_admin_user
 
-router = APIRouter(
-    prefix="/books",
-    tags=["books"]
-)
+router = APIRouter(tags=["books"])
 
 # -------------------------
 # دریافت همه کتاب‌ها (عمومی)
 # -------------------------
 @router.get("/", response_model=List[BookOut])
-def list_books(db: Session = Depends(get_db)):
-    return get_books(db)
+def list_books(category_id: str | None = None, db: Session = Depends(get_db)):
+    return get_books(db, category_id)
 
 
 # -------------------------
