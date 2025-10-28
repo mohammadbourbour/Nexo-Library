@@ -1,55 +1,38 @@
-import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
-import { authService } from "./authService";
+import { API_ENDPOINTS, request } from "@/config/api";
 
 export interface Category {
   id: string;
   name: string;
+  description?: string;
   count?: number;
 }
 
 class CategoryService {
-  private getAuthHeaders(token?: string): HeadersInit {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-    const finalToken = token || authService.getToken();
-    if (finalToken) headers["Authorization"] = `Bearer ${finalToken}`;
-    return headers;
+  // Helper برای گرفتن توکن از localStorage
+  private getToken(token?: string) {
+    return token || localStorage.getItem("auth_token") || "";
   }
 
+  // ------------------ دریافت همه دسته‌ها ------------------
   async getAllCategories(token?: string): Promise<Category[]> {
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CATEGORIES}`, {
-      method: "GET",
-      headers: this.getAuthHeaders(token),
-    });
-    if (!response.ok) throw new Error("Failed to fetch categories");
-    return response.json();
+    return request(API_ENDPOINTS.CATEGORIES, "GET");
   }
 
-  async createCategory(name: string, token?: string): Promise<void> {
-    console.log("🔹 Creating category:", name);
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CATEGORIES}`, {
-      method: "POST",
-      headers: this.getAuthHeaders(token),
-      body: JSON.stringify({ name }),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || "Failed to create category");
-    }
+  // ------------------ اضافه کردن دسته ------------------
+  async createCategory(name: string, token?: string): Promise<Category> {
+    return request(API_ENDPOINTS.CATEGORIES, "POST", { name }, this.getToken(token));
   }
 
   async deleteCategory(id: string, token?: string): Promise<void> {
-    console.log("🗑 Deleting category ID:", id);
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CATEGORY_BY_ID(id)}`, {
-      method: "DELETE",
-      headers: this.getAuthHeaders(token),
-    });
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || "Failed to delete category");
-    }
+    const t = token || localStorage.getItem("token");
+    if (!t) throw new Error("توکن موجود نیست!");
+
+    // API توی body اسم دسته رو میخواد
+    const category = { name: id }; // یا اگر API id می‌خواد اینو id بذار
+
+    await request(API_ENDPOINTS.CATEGORY_BY_ID(id), "DELETE", category, t);
   }
+
 }
 
 export const categoryService = new CategoryService();

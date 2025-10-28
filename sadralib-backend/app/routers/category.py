@@ -35,7 +35,7 @@ def retrieve_category(category_id: str, db: Session = Depends(get_db)):
 def create_new_category(
     data: CategoryCreate,
     db: Session = Depends(get_db),
-    admin_user=Depends(get_admin_user)
+    _admin_user=Depends(get_admin_user)
 ):
     return create_category(db, data.name, data.description)
 

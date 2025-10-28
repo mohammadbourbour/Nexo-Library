@@ -8,23 +8,40 @@ from app.deps import get_db, get_admin_user
 
 router = APIRouter(tags=["books"])
 
-# -------------------------
-# دریافت همه کتاب‌ها (عمومی)
-# -------------------------
+# مسیر پایه فایل‌های آپلود شده
+UPLOAD_BASE_URL = "/static/uploads"
+
 @router.get("/", response_model=List[BookOut])
 def list_books(category_id: str | None = None, db: Session = Depends(get_db)):
-    return get_books(db, category_id)
+    books = get_books(db, category_id)
+    
+    result = []
+    for b in books:
+        book_dict = b.__dict__.copy()  # تبدیل ORM به dict
+        if book_dict.get("pdf_url"):
+            book_dict["pdf_url"] = f"{book_dict['pdf_url']}"
+        if book_dict.get("cover_url"):
+            book_dict["cover_url"] = f"{book_dict['cover_url']}"
+        result.append(book_dict)
+    
+    return result
 
 
-# -------------------------
-# دریافت جزئیات یک کتاب (عمومی)
-# -------------------------
 @router.get("/{book_id}", response_model=BookOut)
 def book_detail(book_id: str, db: Session = Depends(get_db)):
     book = get_book_by_id(db, book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    return book
+    
+    book_dict = book.__dict__.copy()
+    if book_dict.get("pdf_url"):
+        book_dict["pdf_url"] = f"/static/uploads/{book_dict['pdf_url']}"
+    if book_dict.get("cover_url"):
+        book_dict["cover_url"] = f"/static/uploads/{book_dict['cover_url']}"
+    
+    return book_dict
+
+
 
 
 # -------------------------
@@ -43,6 +60,12 @@ def update_existing_book(book_id: str, book: BookUpdate, db: Session = Depends(g
     updated_book = update_book(db, book_id, book)
     if not updated_book:
         raise HTTPException(status_code=404, detail="Book not found")
+    
+    if updated_book.pdf_url:
+        updated_book.pdf_url = f"{UPLOAD_BASE_URL}/{updated_book.pdf_url}"
+    if updated_book.cover_url:
+        updated_book.cover_url = f"{UPLOAD_BASE_URL}/{updated_book.cover_url}"
+    
     return updated_book
 
 

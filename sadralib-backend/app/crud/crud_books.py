@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-
 from app.models.models import Book
 from app.schemas.schemas import BookCreate, BookUpdate
 
@@ -14,7 +13,6 @@ def get_books(db: Session, category_id: Optional[str] = None) -> List[Book]:
     return query.order_by(Book.created_at.desc()).all()
 
 
-
 # -------------------------
 # دریافت یک کتاب با شناسه
 # -------------------------
@@ -25,7 +23,7 @@ def get_book_by_id(db: Session, book_id: str) -> Optional[Book]:
 # -------------------------
 # ایجاد کتاب جدید
 # -------------------------
-def create_book(db: Session, book: BookCreate) -> Book:
+def create_book(db: Session, book: BookCreate, pdf_filename: str = None, cover_filename: str = None) -> Book:
     db_book = Book(
         title=book.title,
         author=book.author,
@@ -33,9 +31,9 @@ def create_book(db: Session, book: BookCreate) -> Book:
         language=book.language,
         year=book.year,
         pages=book.pages,
-        cover_url=book.cover_url,
-        pdf_url=book.pdf_url,
-        category_id=book.category_id
+        category_id=book.category_id,
+        pdf_url=f"sadralib-backend/static/uploads/{pdf_filename}" if pdf_filename else None,
+        cover_url=f"sadralib-backend/static/uploads/{cover_filename}" if cover_filename else None
     )
     db.add(db_book)
     db.commit()

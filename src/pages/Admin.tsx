@@ -14,12 +14,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { bookService } from "@/services/bookService";
 import { categoryService } from "@/services/categoryService";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-interface DecodedToken {
-  exp: number;
-  [key: string]: any;
-}
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -30,43 +24,12 @@ const Admin = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [newCategoryName, setNewCategoryName] = useState("");
-
-  // ---------------- Helper: get valid token ----------------
-  const getValidToken = async (): Promise<string | null> => {
-    let token = localStorage.getItem("token");
-    if (!token) return null;
-
-    const decoded: DecodedToken = jwtDecode(token);
-    const now = Date.now() / 1000;
-
-    if (decoded.exp < now) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: "POST",
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Refresh failed");
-        const data = await res.json();
-        localStorage.setItem("token", data.access_token);
-        token = data.access_token;
-      } catch {
-        logout();
-        navigate("/login");
-        toast({
-          variant: "destructive",
-          title: "جلسه شما پایان یافت",
-          description: "لطفاً دوباره وارد شوید",
-        });
-        return null;
-      }
-    }
-    return token;
-  };
+  const [language, setLanguage] = useState<string>("");
 
   // ---------------- Load Data ----------------
   const loadData = async () => {
     try {
-      const cats = await categoryService.getAllCategories();
+      const cats = await categoryService.getAllCategories(localStorage.getItem("auth_token") || "");
       const bks = await bookService.getAllBooks();
       setCategories(cats);
       setBooks(bks);
@@ -89,28 +52,56 @@ const Admin = () => {
     loadData();
   }, []);
 
-  // ---------------- Upload Book ----------------
-  const handleUpload = async (e: any) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const token = await getValidToken();
-    if (!token) return;
+// ---------------- Handle Upload ----------------
+const handleUpload = async (e: any) => {
+  e.preventDefault();
 
-    try {
-      await bookService.addBook(formData, token);
-      toast({ title: "موفق", description: "کتاب اضافه شد" });
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در آپلود کتاب" });
-    }
-  };
+  const token = localStorage.getItem("auth_token");
+  if (!token) return;
+
+  const formData = new FormData(e.currentTarget);
+  const file = formData.get("file") as File;
+  const cover = formData.get("cover") as File;
+  const title = formData.get("title") as string;
+  const author = formData.get("author") as string;
+  const description = formData.get("description") as string;
+  const year = formData.get("year") as string;
+  const pages = formData.get("pages") as string;
+  const language = formData.get("language") as string;
+  const category_id = formData.get("category") as string;
+
+  if (!file || !cover) {
+    toast({ variant: "destructive", title: "لطفاً PDF و کاور را انتخاب کنید!" });
+    return;
+  }
+
+  try {
+    await bookService.addBookWithCover(
+      file,
+      cover,
+      title,
+      author,
+      description,
+      token,
+      category_id,
+      language,
+      year ? parseInt(year) : null,
+      pages ? parseInt(pages) : null
+    );
+
+    toast({ title: "موفق", description: "کتاب با کاور اضافه شد" });
+    loadData();
+  } catch (err) {
+    console.error(err);
+    toast({ variant: "destructive", title: "خطا در آپلود کتاب" });
+  }
+};
+
 
   // ---------------- Add Category ----------------
   const handleAddCategory = async () => {
-    console.log("🔹 handleAddCategory triggered", newCategoryName);
     if (!newCategoryName.trim()) return;
-    const token = await getValidToken();
+    const token = localStorage.getItem("auth_token");
     if (!token) return;
 
     try {
@@ -124,25 +115,9 @@ const Admin = () => {
     }
   };
 
-  // ---------------- Delete Book ----------------
-  const handleDeleteBook = async (id: string) => {
-    const token = await getValidToken();
-    if (!token) return;
-
-    try {
-      await bookService.deleteBook(id, token);
-      toast({ title: "کتاب حذف شد" });
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در حذف کتاب" });
-    }
-  };
-
   // ---------------- Delete Category ----------------
   const handleDeleteCategory = async (id: string) => {
-    console.log("🗑 handleDeleteCategory called with ID:", id);
-    const token = await getValidToken();
+    const token = localStorage.getItem("auth_token");
     if (!token) return;
 
     try {
@@ -155,11 +130,25 @@ const Admin = () => {
     }
   };
 
+  // ---------------- Delete Book ----------------
+  const handleDeleteBook = async (id: string) => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+
+    try {
+      await bookService.deleteBook(id, token);
+      toast({ title: "کتاب حذف شد" });
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: "خطا در حذف کتاب" });
+    }
+  };
+
   // ---------------- Render ----------------
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-8">
         <div className="container flex items-center gap-3">
           <Shield className="h-8 w-8 text-primary" />
@@ -185,19 +174,52 @@ const Admin = () => {
                   <CardHeader><CardTitle>آپلود کتاب جدید</CardTitle></CardHeader>
                   <CardContent>
                     <form onSubmit={handleUpload} className="space-y-4">
-                      <Input name="title" placeholder="عنوان" required />
-                      <Input name="author" placeholder="نویسنده" required />
-                      <Textarea name="description" placeholder="توضیحات" required />
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory} name="category" required>
-                        <SelectTrigger><SelectValue placeholder="انتخاب دسته‌بندی" /></SelectTrigger>
-                        <SelectContent>
-                          {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Input name="cover" type="file" accept="image/*" required />
-                      <Input name="pdf" type="file" accept="application/pdf" required />
-                      <Button className="w-full" type="submit">آپلود</Button>
-                    </form>
+                    <Input name="title" placeholder="عنوان" required />
+                    <Input name="author" placeholder="نویسنده" required />
+                    <Input name="year" type="number" placeholder="سال انتشار" />
+                    <Input name="pages" type="number" placeholder="تعداد صفحات" />
+                    <Textarea name="description" placeholder="توضیحات" required />
+
+                    {/* انتخاب دسته‌بندی */}
+                    <Select 
+                      value={selectedCategory} 
+                      onValueChange={setSelectedCategory} 
+                      name="category"
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب دسته‌بندی" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* انتخاب زبان */}
+                    <Select 
+                      value={language} 
+                      onValueChange={setLanguage} 
+                      name="language"
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="زبان کتاب" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="فارسی">فارسی</SelectItem>
+                        <SelectItem value="انگلیسی">انگلیسی</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Input name="cover" type="file" accept="image/*" required />
+                    <Input name="file" type="file" accept="application/pdf" required />
+                    <Button className="w-full" type="submit">آپلود</Button>
+                  </form>
+
                   </CardContent>
                 </Card>
               </div>

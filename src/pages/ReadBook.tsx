@@ -1,31 +1,88 @@
 import { useParams, Link } from "react-router-dom";
-import { mockBooks } from "@/data/mockBooks";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
-import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
 
 // تنظیم worker برای react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  language: string;
+  year?: number;
+  pages?: number;
+  cover_url?: string;
+  pdf_url?: string;
+  category_id?: string;
+  tags?: string[];
+}
+
+const getFullUrl = (url?: string) => {
+  if (!url) return "";
+
+  // اگر مسیر با static/uploads شروع می‌شه و دوباره static/uploads اضافه شده، حذفش کن
+  const cleanedUrl = url.replace(/^\/?static\/uploads\//, "").replace(/^static\/uploads\//, "");
+
+  // مسیر نهایی: /{subfolder}/static/uploads/file.pdf
+  return `/${cleanedUrl}`;
+};
+
+
+
 const ReadBook = () => {
   const { id } = useParams();
-  const book = mockBooks.find((b) => b.id === id);
+  const [book, setBook] = useState<Book | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch book");
+        return res.json();
+      })
+      .then(data => {
+        setBook(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [id]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
 
-  if (!book) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">در حال بارگذاری کتاب...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !book) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">کتاب یافت نشد</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
           <Link to="/">
             <Button>بازگشت به صفحه اصلی</Button>
           </Link>
@@ -80,9 +137,7 @@ const ReadBook = () => {
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <span className="text-sm min-w-[60px] text-center">
-                {Math.round(scale * 100)}%
-              </span>
+              <span className="text-sm min-w-[60px] text-center">{Math.round(scale * 100)}%</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -91,12 +146,14 @@ const ReadBook = () => {
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href={book.pdfUrl} download>
-                <Download className="h-4 w-4 ml-1" />
-                دانلود
-              </a>
-            </Button>
+            {book.pdf_url && (
+              <Button variant="outline" size="sm" asChild>
+                <a href={getFullUrl(book.pdf_url)} download>
+                  <Download className="h-4 w-4 ml-1" />
+                  دانلود
+                </a>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -105,9 +162,9 @@ const ReadBook = () => {
       <div className="container py-8">
         <div className="bg-background rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto">
           <div className="flex items-center justify-center p-4 bg-muted/30">
-            {book.pdfUrl ? (
+            {book.pdf_url ? (
               <Document
-                file={book.pdfUrl}
+                file={getFullUrl(book.pdf_url)}
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center p-12">
@@ -141,17 +198,6 @@ const ReadBook = () => {
                 <p className="text-muted-foreground mb-4">
                   فایل PDF برای این کتاب موجود نیست
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  برای اتصال به بک‌اند پایتون، باید URL فایل PDF را از API دریافت کنید.
-                </p>
-                <div className="mt-6 p-4 bg-muted rounded-lg text-right text-sm">
-                  <p className="font-bold mb-2">مثال برای فراخوانی API پایتون:</p>
-                  <code className="block text-xs">
-                    {`fetch('https://your-api.com/books/${id}')`}<br/>
-                    {`.then(res => res.json())`}<br/>
-                    {`.then(data => setPdfUrl(data.pdfUrl))`}
-                  </code>
-                </div>
               </div>
             )}
           </div>

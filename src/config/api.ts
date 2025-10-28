@@ -15,8 +15,8 @@ export const API_ENDPOINTS = {
   ADMIN_BOOK_DELETE: (id: string) => `/api/books/${id}`, // DELETE → حذف
 
   // PDF / Cover upload (اختیاری اگر مسیر فایل روی سرور باشه)
-  ADMIN_UPLOAD_PDF: '/api/books/uploads/pdf',
-  ADMIN_UPLOAD_COVER: '/api/books/uploads/cover',
+  ADMIN_UPLOAD_PDF: '/api/upload/',
+  ADMIN_UPLOAD_COVER: '/api/uploads/cover',
 
   // Categories
   CATEGORIES: '/api/categories',             // GET → همه دسته‌بندی‌ها, POST → ساخت

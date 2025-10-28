@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, books , category
 from app.db.base import Base
 from app.db.session import engine
+from fastapi.staticfiles import StaticFiles
+from app.routers import upload
+
 
 
 # ایجاد جداول دیتابیس (اگر هنوز ایجاد نشده باشند)
@@ -39,6 +42,8 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(books.router, prefix="/api/books", tags=["books"])
 app.include_router(category.router, prefix="/api/categories", tags=["categories"])
+app.include_router(upload.router, prefix="/api", tags=["upload"])
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # -------------------------
 # روت پیش‌فرض
 # -------------------------
