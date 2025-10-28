@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 sadralib-backend/static/uploads
-# Ignore __pucache__ folders
+# Ignore folders
 **/__pycache__/
 **/*.pyc
 **/*.pyo
