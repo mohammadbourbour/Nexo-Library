@@ -33,4 +33,9 @@ venv/
 env/
 ENV/
 .venv/
-.env/
+
+# Ignore environment files (sensitive credentials)
+.env
+.env.local
+.env.*.local
+sadralib-backend/.env
