@@ -5,7 +5,10 @@ psycopg2-binary
 alembic
 python-dotenv
 pydantic
+pydantic-settings
 passlib[bcrypt]
 PyJWT
 python-multipart
 python-magic
+slowapi
+email-validator
