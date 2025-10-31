@@ -96,10 +96,26 @@ def update_book(db: Session, book_id: str, book: BookUpdate) -> Optional[Book]:
 
 
 # -------------------------
-# حذف کتاب
+# حذف نرم کتاب (Soft Delete)
 # -------------------------
 def delete_book(db: Session, book_id: str) -> bool:
-    db_book = get_book_by_id(db, book_id)
+    db_book = db.query(Book).filter(and_(Book.id == book_id, Book.is_deleted == False)).first()
+    if not db_book:
+        return False
+
+    # انجام soft delete
+    db_book.is_deleted = True
+    db_book.deleted_at = datetime.utcnow()
+
+    db.commit()
+    return True
+
+
+# -------------------------
+# حذف دائم کتاب (Hard Delete - فقط برای ادمین)
+# -------------------------
+def permanently_delete_book(db: Session, book_id: str) -> bool:
+    db_book = db.query(Book).filter(Book.id == book_id).first()
     if not db_book:
         return False
     db.delete(db_book)
