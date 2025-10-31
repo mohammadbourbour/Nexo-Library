@@ -57,9 +57,25 @@ app.include_router(category.router, prefix="/api/categories", tags=["categories"
 app.include_router(upload.router, prefix="/api", tags=["upload"])
 app.mount("/static", StaticFiles(directory="static"), name="static")
 # -------------------------
+# Security Headers Middleware
+# -------------------------
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    return response
+
+# -------------------------
 # روت پیش‌فرض
 # -------------------------
 @app.get("/")
 def root():
-    return {"message": "Sadralib Backend is running!"}
-print("ROUTES:", [route.path for route in app.routes])
+    return {"message": "Sadralib Backend is running!", "version": "1.0.0"}
+
+# لاگ روترها فقط در Debug Mode
+if settings.DEBUG:
+    logger.info("ROUTES: " + str([route.path for route in app.routes]))
