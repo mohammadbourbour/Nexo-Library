@@ -47,17 +47,19 @@ def list_books(
 
 
 @router.get("/{book_id}", response_model=BookOut)
-def book_detail(book_id: str, db: Session = Depends(get_db)):
+@limiter.limit("60/minute")
+def book_detail(book_id: str, db: Session = Depends(get_db), request=None):
     book = get_book_by_id(db, book_id)
-    if not book:
+    if not book or book.is_deleted:
         raise HTTPException(status_code=404, detail="Book not found")
-    
+
     book_dict = book.__dict__.copy()
+    book_dict.pop('_sa_instance_state', None)
     if book_dict.get("pdf_url"):
         book_dict["pdf_url"] = f"/static/uploads/{book_dict['pdf_url']}"
     if book_dict.get("cover_url"):
         book_dict["cover_url"] = f"/static/uploads/{book_dict['cover_url']}"
-    
+
     return book_dict
 
 
