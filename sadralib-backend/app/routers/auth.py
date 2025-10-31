@@ -40,6 +40,7 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
 # ورود و دریافت توکن
 # -------------------------
 @router.post("/login")
+@limiter.limit("10/minute")  # حداکثر 10 درخواست در دقیقه برای login
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not pwd_context.verify(form_data.password, user.hashed_password):
