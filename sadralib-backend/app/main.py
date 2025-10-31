@@ -1,12 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.routers import auth, books , category
 from app.db.base import Base
 from app.db.session import engine
 from fastapi.staticfiles import StaticFiles
 from app.routers import upload
+from app.core.config import settings
+import logging
 
-
+# تنظیم لاگینگ
+logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # ایجاد جداول دیتابیس (اگر هنوز ایجاد نشده باشند)
 Base.metadata.create_all(bind=engine)
@@ -17,10 +22,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-
+# -------------------------
+# Security Middleware
+# -------------------------
+# اضافه کردن Trusted Host Middleware
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1", "sadralib.ir", "*.sadralib.ir"]
+)
 
 # -------------------------
-# تنظیمات CORS
+# تنظیمات CORS امن‌تر
 # -------------------------
 origins = [
     "http://localhost:8080",  # فرانت‌اند لوکال
@@ -32,8 +44,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # روشهای مشخص به جای *
+    allow_headers=["Content-Type", "Authorization"],  # headersهای مشخص به جای *
 )
 
 # -------------------------
