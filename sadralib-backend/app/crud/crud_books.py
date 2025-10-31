@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Tuple
 from app.models.models import Book
 from app.schemas.schemas import BookCreate, BookUpdate
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
+from datetime import datetime
 
 # -------------------------
 # دریافت همه کتاب‌ها با پشتیبانی Pagination و Search
