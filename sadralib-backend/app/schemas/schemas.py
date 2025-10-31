@@ -1,7 +1,22 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Generic, TypeVar
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+
+T = TypeVar('T')
+
+# -------------------------
+# Pagination Schemas
+# -------------------------
+class PaginationParams(BaseModel):
+    skip: int = Field(0, ge=0)
+    limit: int = Field(20, ge=1, le=100)
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    skip: int
+    limit: int
+    has_more: bool
 # -------------------------
 # Base Book Schema
 # -------------------------
