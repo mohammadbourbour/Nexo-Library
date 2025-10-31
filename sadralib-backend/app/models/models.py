@@ -36,6 +36,9 @@ class Book(Base):
     cover_url = Column(String, nullable=True)
     pdf_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)  # Soft Delete Flag
+    deleted_at = Column(DateTime, nullable=True)
 
     category_id = Column(String, ForeignKey("categories.id", ondelete="SET NULL"))
     category = relationship("Category", back_populates="books")
