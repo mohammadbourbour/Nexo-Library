@@ -10,7 +10,10 @@ from app.schemas.schemas import UserCreate, UserOut
 from app.core.config import settings
 from app.deps import get_current_user
 from app.core.security import get_password_hash, create_access_token
+from app.core.rate_limiter import limiter
+import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["auth"])
 
