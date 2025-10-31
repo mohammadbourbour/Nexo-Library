@@ -66,6 +66,7 @@ class CreateAdminRequest(BaseModel):
     admin_secret: str | None = None  # در صورتی که بخواهیم پس از اولین ادمین از secret استفاده کنیم
 
 @router.post("/create-admin")
+@limiter.limit("2/minute")  # حداکثر 2 درخواست در دقیقه برای ایجاد ادمین
 def create_admin(payload: CreateAdminRequest, db: Session = Depends(get_db)):
     # آیا ادمینی از قبل وجود دارد؟
     existing_admin = db.query(User).filter(User.role == "admin").first()
