@@ -1,12 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from app.routers import auth, books , category
 from app.db.base import Base
 from app.db.session import engine
 from fastapi.staticfiles import StaticFiles
 from app.routers import upload
 from app.core.config import settings
+from app.core.rate_limiter import limiter, rate_limit_handler
+from slowapi.errors import RateLimitExceeded
 import logging
 
 # تنظیم لاگینگ
