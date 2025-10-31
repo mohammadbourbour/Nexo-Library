@@ -24,6 +24,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ثبت‌نام کاربر جدید
 # -------------------------
 @router.post("/signup", response_model=UserOut)
+@limiter.limit("5/minute")  # حداکثر 5 درخواست در دقیقه
 def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
