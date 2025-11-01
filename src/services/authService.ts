@@ -2,7 +2,6 @@ import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 export interface LoginResponse {
   success: boolean;
-  token?: string;
   user?: {
     id: string;
     email: string;
@@ -14,7 +13,6 @@ export interface LoginResponse {
 
 export interface SignupResponse {
   success: boolean;
-  token?: string;
   user?: {
     id: string;
     email: string;
@@ -35,72 +33,42 @@ export interface VerifyTokenResponse {
 }
 
 class AuthService {
-  private getAuthHeaders(token?: string): HeadersInit {
-    const headers: HeadersInit = {
+  private getAuthHeaders(): HeadersInit {
+    return {
       'Content-Type': 'application/json',
     };
-    
-    const authToken = token || this.getStoredToken();
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
-    }
-    
-    return headers;
   }
 
-  private getStoredToken(): string | null {
-    return localStorage.getItem('auth_token');
-  }
+  async login(username: string, password: string): Promise<LoginResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ username, password }).toString(),
+        credentials: 'include', // ← ارسال/دریافت کوکی‌ها
+      });
 
-  private setStoredToken(token: string): void {
-    localStorage.setItem('auth_token', token);
-  }
+      const data = await response.json();
 
-  private removeStoredToken(): void {
-    localStorage.removeItem('auth_token');
-  }
+      if (response.ok && data.user) {
+        return {
+          success: true,
+          user: data.user,
+        };
+      }
 
- async login(username: string, password: string): Promise<LoginResponse> {
-  try {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-
-    const authToken = this.getStoredToken();
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-
-    const body = new URLSearchParams({ username, password }).toString();
-
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
-      method: 'POST',
-      headers,
-      body,
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.token) {
-      this.setStoredToken(data.token);
       return {
-        success: true,
-        token: data.token,
-        user: data.user,
+        success: false,
+        error: data.message || 'خطا در ورود به سیستم',
+      };
+    } catch (error) {
+      console.error('Login error:', error);
+      return {
+        success: false,
+        error: 'خطا در برقراری ارتباط با سرور',
       };
     }
-
-    return {
-      success: false,
-      error: data.message || 'خطا در ورود به سیستم',
-    };
-  } catch (error) {
-    console.error('Login error:', error);
-    return {
-      success: false,
-      error: 'خطا در برقراری ارتباط با سرور',
-    };
   }
-}
-
 
   async signup(email: string, password: string, name: string): Promise<SignupResponse> {
     try {
@@ -108,15 +76,14 @@ class AuthService {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ email, password, name }),
+        credentials: 'include', // ← دریافت کوکی از سرور بعد از signup
       });
 
       const data = await response.json();
 
-      if (response.ok && data.token) {
-        this.setStoredToken(data.token);
+      if (response.ok && data.user) {
         return {
           success: true,
-          token: data.token,
           user: data.user,
         };
       }
@@ -134,11 +101,12 @@ class AuthService {
     }
   }
 
-  async verifyToken(token?: string): Promise<VerifyTokenResponse> {
+  async verifyToken(): Promise<VerifyTokenResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFY_TOKEN}`, {
         method: 'GET',
-        headers: this.getAuthHeaders(token),
+        headers: this.getAuthHeaders(),
+        credentials: 'include', // ← ارسال کوکی JWT به سرور برای اعتبارسنجی
       });
 
       const data = await response.json();
@@ -162,17 +130,12 @@ class AuthService {
       await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGOUT}`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
+        credentials: 'include', // ← ارسال کوکی برای حذفش در سرور
       });
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      this.removeStoredToken();
     }
-  }
-
-  getToken(): string | null {
-    return this.getStoredToken();
   }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService(); 

@@ -43,7 +43,7 @@ class BookOut(BookBase):
     id: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 
@@ -83,4 +83,16 @@ class CategoryOut(CategoryBase):
     id: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+        
+        
+from pydantic import BaseModel, EmailStr, Field, constr
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = constr(min_length=8, max_length=64)  # حداقل طول پسورد
+    name: str = constr(min_length=2, max_length=50)
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str = constr(min_length=8, max_length=64)

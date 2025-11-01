@@ -8,31 +8,18 @@ export interface Category {
 }
 
 class CategoryService {
-  // Helper برای گرفتن توکن از localStorage
-  private getToken(token?: string) {
-    return token || localStorage.getItem("auth_token") || "";
-  }
-
-  // ------------------ دریافت همه دسته‌ها ------------------
-  async getAllCategories(token?: string): Promise<Category[]> {
+  async getAllCategories(): Promise<Category[]> {
     return request(API_ENDPOINTS.CATEGORIES, "GET");
   }
 
-  // ------------------ اضافه کردن دسته ------------------
-  async createCategory(name: string, token?: string): Promise<Category> {
-    return request(API_ENDPOINTS.CATEGORIES, "POST", { name }, this.getToken(token));
+  async createCategory(name: string): Promise<Category> {
+    return request(API_ENDPOINTS.CATEGORIES, "POST", { name });
   }
 
-  async deleteCategory(id: string, token?: string): Promise<void> {
-    const t = token || localStorage.getItem("token");
-    if (!t) throw new Error("توکن موجود نیست!");
-
-    // API توی body اسم دسته رو میخواد
-    const category = { name: id }; // یا اگر API id می‌خواد اینو id بذار
-
-    await request(API_ENDPOINTS.CATEGORY_BY_ID(id), "DELETE", category, t);
+  async deleteCategory(id: string): Promise<void> {
+    const category = { name: id }; // اگر API id می‌خواد، اینو تغییر بده
+    await request(API_ENDPOINTS.CATEGORY_BY_ID(id), "DELETE", category);
   }
-
 }
 
 export const categoryService = new CategoryService();
