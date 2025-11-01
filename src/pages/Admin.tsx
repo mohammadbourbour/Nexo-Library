@@ -26,86 +26,78 @@ const Admin = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [language, setLanguage] = useState<string>("");
 
-  // ---------------- Load Data ----------------
-  const loadData = async () => {
-    try {
-      const cats = await categoryService.getAllCategories(localStorage.getItem("auth_token") || "");
-      const bks = await bookService.getAllBooks();
-      setCategories(cats);
-      setBooks(bks);
-    } catch (err) {
-      console.error("❌ Error loading data:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "لطفاً وارد حساب شوید" });
-      navigate("/login");
-      return;
-    }
-    if (!isAdmin) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "شما ادمین نیستید" });
-      navigate("/");
-      return;
-    }
-    loadData();
-  }, []);
-
-// ---------------- Handle Upload ----------------
-const handleUpload = async (e: any) => {
-  e.preventDefault();
-
-  const token = localStorage.getItem("auth_token");
-  if (!token) return;
-
-  const formData = new FormData(e.currentTarget);
-  const file = formData.get("file") as File;
-  const cover = formData.get("cover") as File;
-  const title = formData.get("title") as string;
-  const author = formData.get("author") as string;
-  const description = formData.get("description") as string;
-  const year = formData.get("year") as string;
-  const pages = formData.get("pages") as string;
-  const language = formData.get("language") as string;
-  const category_id = formData.get("category") as string;
-
-  if (!file || !cover) {
-    toast({ variant: "destructive", title: "لطفاً PDF و کاور را انتخاب کنید!" });
-    return;
-  }
-
+ // ---------------- Load Data ----------------
+const loadData = async () => {
   try {
-    await bookService.addBookWithCover(
-      file,
-      cover,
-      title,
-      author,
-      description,
-      token,
-      category_id,
-      language,
-      year ? parseInt(year) : null,
-      pages ? parseInt(pages) : null
-    );
-
-    toast({ title: "موفق", description: "کتاب با کاور اضافه شد" });
-    loadData();
+    const cats = await categoryService.getAllCategories();
+    const bks = await bookService.getAllBooks();
+    setCategories(cats);
+    setBooks(bks);
   } catch (err) {
-    console.error(err);
-    toast({ variant: "destructive", title: "خطا در آپلود کتاب" });
+    console.error("❌ Error loading data:", err);
   }
 };
 
+useEffect(() => {
+  if (!isAuthenticated) {
+    toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "لطفاً وارد حساب شوید" });
+    navigate("/login");
+    return;
+  }
+  if (!isAdmin) {
+    toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "شما ادمین نیستید" });
+    navigate("/");
+    return;
+  }
+  loadData();
+}, []);
 
-  // ---------------- Add Category ----------------
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
+  // ---------------- Handle Upload ----------------
+  const handleUpload = async (e: any) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+    const file = formData.get("file") as File;
+    const cover = formData.get("cover") as File;
+    const title = formData.get("title") as string;
+    const author = formData.get("author") as string;
+    const description = formData.get("description") as string;
+    const year = formData.get("year") as string;
+    const pages = formData.get("pages") as string;
+    const language = formData.get("language") as string;
+    const category_id = formData.get("category") as string;
+
+    if (!file || !cover) {
+      toast({ variant: "destructive", title: "لطفاً PDF و کاور را انتخاب کنید!" });
+      return;
+    }
 
     try {
-      await categoryService.createCategory(newCategoryName, token);
+      await bookService.addBookWithCover(
+        file,
+        cover,
+        title,
+        author,
+        description,
+        category_id,
+        language ? language : null,
+        year ? parseInt(year) : null,
+        pages ? parseInt(pages) : null
+      );
+
+      toast({ title: "موفق", description: "کتاب با کاور اضافه شد" });
+      loadData();
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: "خطا در آپلود کتاب" });
+    }
+  };
+
+  // ---------------- Add/Delete Category ----------------
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      await categoryService.createCategory(newCategoryName);
       toast({ title: "موفق", description: "دسته‌بندی اضافه شد" });
       setNewCategoryName("");
       loadData();
@@ -115,13 +107,9 @@ const handleUpload = async (e: any) => {
     }
   };
 
-  // ---------------- Delete Category ----------------
   const handleDeleteCategory = async (id: string) => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
     try {
-      await categoryService.deleteCategory(id, token);
+      await categoryService.deleteCategory(String(id));
       toast({ title: "دسته‌بندی حذف شد" });
       loadData();
     } catch (err) {
@@ -130,13 +118,10 @@ const handleUpload = async (e: any) => {
     }
   };
 
-  // ---------------- Delete Book ----------------
-  const handleDeleteBook = async (id: string) => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
+  const handleDeleteBook = async (id: string | number) => {
     try {
-      await bookService.deleteBook(id, token);
+      await bookService.deleteBook(String(id));
+
       toast({ title: "کتاب حذف شد" });
       loadData();
     } catch (err) {
@@ -144,6 +129,7 @@ const handleUpload = async (e: any) => {
       toast({ variant: "destructive", title: "خطا در حذف کتاب" });
     }
   };
+
 
   // ---------------- Render ----------------
   return (

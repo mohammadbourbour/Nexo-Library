@@ -3,27 +3,20 @@ import { authService } from './authService';
 import { title } from 'process';
 
 class BookService {
-  private getAuthHeaders(token?: string, isFormData = false): HeadersInit {
-    const headers: HeadersInit = isFormData ? {} : { 'Content-Type': 'application/json' };
-    const finalToken = token || authService.getToken();
-    if (finalToken) headers['Authorization'] = `Bearer ${finalToken}`;
-    return headers;
-  }
-
+  // ------------------ دریافت همه کتاب‌ها ------------------
   async getAllBooks() {
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}`);
     if (!res.ok) throw new Error("Failed to fetch books");
     return res.json();
   }
 
- // services/bookService.ts
-   async addBookWithCover(
+  // ------------------ اضافه کردن کتاب با کاور ------------------
+  async addBookWithCover(
     file: File,
     cover: File,
     title: string,
     author: string,
     description: string,
-    token: string,
     category_id?: string,
     language?: string,
     year?: number | null,
@@ -39,13 +32,11 @@ class BookService {
     if (language) formData.append("language", language);
     if (year !== undefined && year !== null) formData.append("year", year.toString());
     if (pages !== undefined && pages !== null) formData.append("pages", pages.toString());
-
+  
     const res = await fetch(`${API_BASE_URL}/api/upload/`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -56,11 +47,11 @@ class BookService {
     return await res.json();
   }
 
-
-  async deleteBook(id: string, token?: string) {
+  // ------------------ حذف کتاب ------------------
+  async deleteBook(id: string) {
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {
       method: "DELETE",
-      headers: this.getAuthHeaders(token),
+      credentials: "include",
     });
 
     if (!res.ok) {
