@@ -1,59 +1,51 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
+export interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+}
+
 export interface LoginResponse {
   success: boolean;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'admin' | 'user';
-  };
+  user?: UserInfo;
   error?: string;
 }
 
 export interface SignupResponse {
   success: boolean;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'admin' | 'user';
-  };
+  user?: UserInfo;
   error?: string;
 }
 
 export interface VerifyTokenResponse {
   valid: boolean;
-  user?: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'admin' | 'user';
-  };
+  user?: UserInfo;
 }
 
 class AuthService {
-  private getAuthHeaders(): HeadersInit {
-    return {
   private getAuthHeaders(): HeadersInit {
     return {
       'Content-Type': 'application/json',
     };
   }
 
-  clearAuthCookie(): void {
+  private clearAuthCookie(): void {
     document.cookie = 'access_token=; Max-Age=0; path=/;';
   }
 
   async login(username: string, password: string): Promise<LoginResponse> {
     try {
       const body = new URLSearchParams({ username, password }).toString();
+
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
         credentials: 'include',
       });
+
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -75,6 +67,7 @@ class AuthService {
         body: JSON.stringify({ email, password, name }),
         credentials: 'include',
       });
+
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -89,15 +82,17 @@ class AuthService {
   }
 
   async verifyToken(): Promise<VerifyTokenResponse> {
-  async verifyToken(): Promise<VerifyTokenResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFY_TOKEN}`, {
         method: 'GET',
         credentials: 'include',
       });
+
       const data = await response.json();
 
-      if (response.ok && data.valid) return { valid: true, user: data.user };
+      if (response.ok && data.valid) {
+        return { valid: true, user: data.user };
+      }
 
       return { valid: false };
     } catch (error) {
@@ -106,7 +101,6 @@ class AuthService {
     }
   }
 
-  // ✅ logout فقط وظیفه تماس با API و پاک کردن کوکی رو داره
   async logout(): Promise<void> {
     try {
       await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGOUT}`, {
@@ -121,4 +115,4 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService(); 
+export const authService = new AuthService();
