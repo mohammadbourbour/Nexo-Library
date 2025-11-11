@@ -20,17 +20,10 @@ export interface UpdateBookData extends Partial<CreateBookData> {
 }
 
 class AdminService {
-  private getAuthHeaders(isFormData = false): HeadersInit {
-    const headers: HeadersInit = isFormData ? {} : { 'Content-Type': 'application/json' };
-    const token = authService.getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
-  }
-
   async createBook(bookData: CreateBookData): Promise<Book> {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_BOOK_CREATE}`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
       body: JSON.stringify(bookData),
     });
 
@@ -45,7 +38,7 @@ class AdminService {
     const { id, ...data } = bookData;
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_BOOK_UPDATE(id)}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
       body: JSON.stringify(data),
     });
 
@@ -59,7 +52,7 @@ class AdminService {
   async deleteBook(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_BOOK_DELETE(id)}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -75,7 +68,7 @@ class AdminService {
 
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_UPLOAD_PDF}`, {
       method: 'POST',
-      headers: this.getAuthHeaders(true),
+      credentials: 'include',
       body: formData,
     });
 
@@ -93,7 +86,7 @@ class AdminService {
 
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_UPLOAD_COVER}`, {
       method: 'POST',
-      headers: this.getAuthHeaders(true),
+      credentials: 'include',
       body: formData,
     });
 

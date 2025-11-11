@@ -8,21 +8,20 @@ export const API_ENDPOINTS = {
   VERIFY_TOKEN: '/api/auth/verify',
 
   // Books
-  BOOKS: '/api/books',                       // GET → همه کتاب‌ها
-  BOOK_BY_ID: (id: string) => `/api/books/${id}`,  // GET / PUT / DELETE
-  ADMIN_BOOK_CREATE: '/api/books/',           // POST → ساخت کتاب (فقط ادمین)
-  ADMIN_BOOK_UPDATE: (id: string) => `/api/books/${id}`, // PUT → بروزرسانی
-  ADMIN_BOOK_DELETE: (id: string) => `/api/books/${id}`, // DELETE → حذف
+  BOOKS: '/api/books',                       
+  BOOK_BY_ID: (id: string) => `/api/books/${id}`,  
+  ADMIN_BOOK_CREATE: '/api/books/',           
+  ADMIN_BOOK_UPDATE: (id: string) => `/api/books/${id}`, 
+  ADMIN_BOOK_DELETE: (id: string) => `/api/books/${id}`, 
 
-  // PDF / Cover upload (اختیاری اگر مسیر فایل روی سرور باشه)
+  // PDF / Cover upload
   ADMIN_UPLOAD_PDF: '/api/upload/',
   ADMIN_UPLOAD_COVER: '/api/uploads/cover',
 
   // Categories
-  CATEGORIES: '/api/categories',             // GET → همه دسته‌بندی‌ها, POST → ساخت
-  CATEGORY_BY_ID: (id: string) => `/api/categories/${id}`, // GET / PUT / DELETE
+  CATEGORIES: '/api/categories',             
+  CATEGORY_BY_ID: (id: string) => `/api/categories/${id}`, 
 };
-
 
 export async function request(
   endpoint: string,
@@ -30,30 +29,44 @@ export async function request(
   data?: any,
   token?: string
 ) {
-  // اگر endpoint لاگین هست Content-Type رو روی x-www-form-urlencoded می‌ذاریم
-  const headers: Record<string, string> = {
-    "Content-Type": endpoint === API_ENDPOINTS.LOGIN 
+  const headers: Record<string, string> = {};
+
+  // فقط وقتی multipart نیست، Content-Type بذار
+  const isMultipart = endpoint.includes("/upload");
+  if (!isMultipart) {
+    headers["Content-Type"] = endpoint === API_ENDPOINTS.LOGIN 
       ? "application/x-www-form-urlencoded" 
-      : "application/json"
-  };
-  
+      : "application/json";
+  }
+
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const body = data
-    ? endpoint === API_ENDPOINTS.LOGIN 
-      ? new URLSearchParams(data).toString()  // فرم لاگین
-      : JSON.stringify(data)                 // بقیه درخواست‌ها JSON
-    : undefined;
+  let body: any;
+  if (data) {
+    if (endpoint === API_ENDPOINTS.LOGIN) {
+      body = new URLSearchParams(data).toString();
+    } else if (isMultipart) {
+      body = data; // فرم‌دیتا مستقیم
+    } else {
+      body = JSON.stringify(data);
+    }
+  }
 
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     method,
     headers,
     body,
+    credentials: "include", // کوکی‌ها را می‌فرستد
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text);
+    let error;
+    try {
+      error = await res.json();
+    } catch {
+      error = await res.text();
+    }
+    throw new Error(error.detail || error || "خطا در درخواست");
   }
 
   return res.json();

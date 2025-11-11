@@ -2,7 +2,6 @@ import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 export interface LoginResponse {
   success: boolean;
-  token?: string;
   user?: {
     id: string;
     email: string;
@@ -14,7 +13,6 @@ export interface LoginResponse {
 
 export interface SignupResponse {
   success: boolean;
-  token?: string;
   user?: {
     id: string;
     email: string;
@@ -35,6 +33,8 @@ export interface VerifyTokenResponse {
 }
 
 class AuthService {
+  private getAuthHeaders(): HeadersInit {
+    return {
   private getAuthHeaders(): HeadersInit {
     return {
       'Content-Type': 'application/json',
@@ -89,6 +89,7 @@ class AuthService {
   }
 
   async verifyToken(): Promise<VerifyTokenResponse> {
+  async verifyToken(): Promise<VerifyTokenResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.VERIFY_TOKEN}`, {
         method: 'GET',
@@ -120,4 +121,4 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService(); 
