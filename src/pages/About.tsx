@@ -6,7 +6,6 @@ import { BookOpen, Users, Globe, Award } from "lucide-react";
 const About = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
 
       <div className="container py-12 flex-1">
         <div className="max-w-4xl mx-auto">
@@ -101,7 +100,7 @@ const About = () => {
         </div>
       </div>
 
-      <Footer />
+      
     </div>
   );
 };

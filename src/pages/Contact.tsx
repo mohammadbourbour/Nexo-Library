@@ -15,7 +15,6 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
 
       <div className="container py-12 flex-1">
         <div className="max-w-5xl mx-auto">
@@ -144,7 +143,6 @@ const Contact = () => {
         </div>
       </div>
 
-      <Footer />
     </div>
   );
 };

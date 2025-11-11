@@ -23,72 +23,67 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false); // برای انیمیشن
 
-  // Verify token on mount
+  // ✅ فقط یک بار اجرا، برای بررسی اعتبار کوکی
   useEffect(() => {
     const verifyAuth = async () => {
-      const token = authService.getToken();
-      if (token) {
-        const result = await authService.verifyToken(token);
+      try {
+        const result = await authService.verifyToken();
         if (result.valid && result.user) {
           setUser(result.user);
         } else {
-          // Invalid token, clear it
-          await authService.logout();
+          setUser(null);
         }
+      } catch (err) {
+        console.error("Auth verify error:", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-
     verifyAuth();
   }, []);
 
   const login = async (username: string, password: string) => {
-    try {
-      const result = await authService.login(username, password);
-      
-      if (result.success && result.user) {
-        setUser(result.user);
-        return { success: true };
-      }
-
-      return {
-        success: false,
-        error: result.error || "خطا در ورود به سیستم",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: "خطا در برقراری ارتباط با سرور",
-      };
+    const result = await authService.login(username, password);
+    if (result.success && result.user) {
+      setUser(result.user);
+      return { success: true };
     }
+    return { success: false, error: result.error || "خطا در ورود به سیستم" };
   };
 
   const signup = async (email: string, password: string, name: string) => {
-    try {
-      const result = await authService.signup(email, password, name);
-      
-      if (result.success && result.user) {
-        setUser(result.user);
-        return { success: true };
-      }
-
-      return {
-        success: false,
-        error: result.error || "خطا در ثبت‌نام",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: "خطا در برقراری ارتباط با سرور",
-      };
+    const result = await authService.signup(email, password, name);
+    if (result.success && result.user) {
+      setUser(result.user);
+      return { success: true };
     }
+    return { success: false, error: result.error || "خطا در ثبت‌نام" };
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setLoggingOut(true); // trigger انیمیشن
+      setTimeout(() => {
+        setUser(null);
+        window.location.href = "/login";
+      }, 600); // زمان انیمیشن
+    }
   };
+
+  useEffect(() => {
+    if (loggingOut) {
+      document.body.classList.add("fade-out");
+    } else {
+      document.body.classList.remove("fade-out");
+    }
+  }, [loggingOut]);
 
   return (
     <AuthContext.Provider
@@ -107,10 +102,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
+
 };

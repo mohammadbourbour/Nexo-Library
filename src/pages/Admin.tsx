@@ -148,7 +148,6 @@ const handleUpload = async (e: any) => {
   // ---------------- Render ----------------
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 py-8">
         <div className="container flex items-center gap-3">
           <Shield className="h-8 w-8 text-primary" />

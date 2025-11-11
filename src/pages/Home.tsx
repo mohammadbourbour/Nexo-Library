@@ -75,7 +75,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header onSearch={setSearchQuery} />
+      
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-16">
@@ -98,7 +98,7 @@ const Home = () => {
                   placeholder="جستجوی کتاب، نویسنده، موضوع..."
                   value={searchQuery} // متن سرچ رو نمایش میده
                   onChange={(e) => setSearchQuery(e.target.value)} // آپدیت state
-                  className="w-full pr-12 h-12 text-lg rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full pr-12 h-12 text-lg rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary  text-black"
                 />
               </div>
             </div>
@@ -167,7 +167,6 @@ const Home = () => {
         </section>
 
 
-      <Footer />
     </div>
   );
 };

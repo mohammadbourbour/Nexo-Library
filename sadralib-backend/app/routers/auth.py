@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
@@ -55,14 +55,42 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
 # -------------------------
 # ورود و دریافت توکن
 # -------------------------
+from fastapi.responses import JSONResponse
+
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not pwd_context.verify(form_data.password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
-    access_token = create_access_token({"sub": str(user.id), "role": user.role})
-    return {"token": access_token, "token_type": "bearer", "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}}
 
+    access_token = create_access_token({"sub": str(user.id), "role": user.role})
+
+    # ✅ ست کردن کوکی
+    response = JSONResponse(
+        content={"success": True, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}} 
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        samesite="lax",
+        path="/"
+    )
+    return response
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(key="access_token", path="/")
+    return {"success": True, "message": "Logged out successfully"}
+# -------------------------
+
+@router.get("/verify")
+async def verify_token(current_user: dict = Depends(get_current_user)):
+    """
+    Verify JWT token and return user info if valid.
+    """
+    return {"valid": True, "user": current_user}
 # -------------------------
 # مسیر تستی برای کاربر جاری
 # -------------------------
@@ -107,3 +135,5 @@ def create_admin(payload: CreateAdminRequest, db: Session = Depends(get_db)):
                                        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
 
     return {"success": True, "token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}}
+
+
