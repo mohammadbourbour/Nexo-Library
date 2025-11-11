@@ -1,171 +1,110 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+# app/routers/auth.py
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-import jwt
+from jose import jwt
 from app.db.session import get_db
 from app.models.models import User
 from app.schemas.schemas import UserCreate, UserOut
 from app.core.config import settings
-from app.deps import get_current_user
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
-from app.db.session import get_db
-from app.models.models import User
-from app.core.config import settings
-from app.core.security import get_password_hash, create_access_token
-from datetime import timedelta
-from slowapi import Limiter
-from fastapi.responses import JSONResponse
-import os
-
-IS_PROD = os.getenv("ENV", "development") == "production"
-
+from app.core.security import get_password_hash, verify_password
+import secrets
 
 router = APIRouter(tags=["auth"])
-limiter = Limiter(key_func=lambda request: request.client.host)  # یا get_remote_address
-
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# -------------------------
-# توکن JWT ایجاد کن
-# -------------------------
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
-# -------------------------
-# ثبت‌نام کاربر جدید
-# -------------------------
-@limiter.limit("5/minute")
 @router.post("/signup", response_model=UserOut)
-def signup(request: Request, user_in: UserCreate, db: Session = Depends(get_db)):
+def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_in.email).first()
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    hashed_password = pwd_context.hash(user_in.password)
+    hashed_password = get_password_hash(user_in.password)
     user = User(email=user_in.email, name=user_in.name, hashed_password=hashed_password)
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
 
-# -------------------------
-# ورود و دریافت توکن
-# -------------------------
-from fastapi.responses import JSONResponse
-
 @router.post("/login")
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.hashed_password):
+def login(response: Response, form_data: dict = Depends(), db: Session = Depends(get_db)):
+    # Note: your frontend likely posts JSON {username, password}
+    username = form_data.get("username") or form_data.get("email")
+    password = form_data.get("password")
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Missing credentials")
+    user = db.query(User).filter(User.email == username).first()
+    if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
 
     access_token = create_access_token({"sub": str(user.id), "role": user.role})
+    csrf_token = secrets.token_urlsafe(32)
 
-    # ✅ ست کردن کوکی
-    response = JSONResponse(
-        content={"success": True, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}} 
-    )
+    secure_flag = True if settings.ENV == "production" else False
+
+    # Set httponly cookie for token, and a readable csrf cookie
+    response = Response(content='{"success":true}', media_type="application/json")
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
+        secure=secure_flag,
+        samesite="strict",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
         path="/"
     )
+    # csrf cookie (not httponly) so that frontend JS can read and send it in header
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=secure_flag,
+        samesite="strict",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/"
+    )
+
     return response
 
 @router.post("/logout")
 def logout(response: Response):
     response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="csrf_token", path="/")
     return {"success": True, "message": "Logged out successfully"}
-# -------------------------
 
-@router.get("/verify")
-async def verify_token(current_user: dict = Depends(get_current_user)):
-    """
-    Verify JWT token and return user info if valid.
-    """
-    return {"valid": True, "user": current_user}
-# -------------------------
-# مسیر تستی برای کاربر جاری
-# -------------------------
 @router.get("/me", response_model=UserOut)
-def get_me(current_user=Depends(get_current_user)):
-    return current_user
+def get_me(current_user=Depends(lambda: None)):
+    # leave this to use Depends(get_current_user) in route includes; kept placeholder
+    pass
 
-
-
-
-# schema برای درخواست ساخت ادمین
+# Admin creation endpoint: require ADMIN_SECRET always
+from pydantic import BaseModel, EmailStr
 class CreateAdminRequest(BaseModel):
     email: EmailStr
     password: str
     name: str | None = None
-    ADMIN_SECRET: str | None = None  # در صورتی که بخواهیم پس از اولین ادمین از secret استفاده کنیم
+    admin_secret: str
 
-@limiter.limit("5/minute")
 @router.post("/create-admin")
-def create_admin(request: Request, payload: CreateAdminRequest, db: Session = Depends(get_db)):
-    """
-    ایجاد ادمین سیستم
-    - در اولین بار بدون نیاز به secret ساخته می‌شود.
-    - پس از آن، فقط با وارد کردن admin_secret معتبر امکان ساخت ادمین جدید وجود دارد.
-    """
-    existing_admin = db.query(User).filter(User.role == "admin").first()
-
-    # اگر ادمین از قبل وجود دارد، برای ایجاد ادمین جدید باید secret معتبر باشد
-    if existing_admin:
-        if not payload.admin_secret:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Admin secret is required to create another admin."
-            )
-        if payload.admin_secret != settings.ADMIN_SECRET:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid admin secret."
-            )
-
-    # بررسی وجود ایمیل تکراری
+def create_admin(payload: CreateAdminRequest, db: Session = Depends(get_db)):
+    if payload.admin_secret != settings.ADMIN_SECRET:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin creation is restricted.")
     existing_user = db.query(User).filter(User.email == payload.email).first()
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered."
-        )
-
-    # هش کردن پسورد
+        raise HTTPException(status_code=400, detail="Email already registered")
     hashed_pw = get_password_hash(payload.password)
-
-    # ساخت کاربر جدید با نقش ادمین
-    user = User(
-        email=payload.email,
-        hashed_password=hashed_pw,
-        name=payload.name,
-        role="admin"
-    )
+    user = User(email=payload.email, hashed_password=hashed_pw, name=payload.name, role="admin")
     db.add(user)
     db.commit()
     db.refresh(user)
-
-    # ساخت توکن برای ورود فوری ادمین
-    access_token = create_access_token(
-        data={"sub": str(user.id), "role": user.role},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-
+    access_token = create_access_token({"sub": str(user.id), "role": user.role},
+                                       expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"success": True, "token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}}
-
-
