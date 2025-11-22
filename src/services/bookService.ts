@@ -47,6 +47,34 @@ class BookService {
     return await res.json();
   }
 
+  // ------------------ ویرایش کتاب ------------------
+  async updateBook(
+    id: string,
+    data: {
+      title?: string;
+      author?: string;
+      description?: string;
+      category_id?: string;
+      language?: string;
+      year?: number | null;
+      pages?: number | null;
+    }
+  ) {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.detail || "خطا در ویرایش کتاب");
+    }
+
+    return await res.json();
+  }
+
   // ------------------ حذف کتاب ------------------
   async deleteBook(id: string) {
     const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOK_BY_ID(id)}`, {

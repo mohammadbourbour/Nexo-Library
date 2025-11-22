@@ -11,6 +11,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -123,6 +124,14 @@ const App = () => (
               element={
                 <AppLayout>
                   <Login />
+                </AppLayout>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <AppLayout>
+                  <Profile />
                 </AppLayout>
               }
             />
