@@ -3,8 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BookCard } from "@/components/BookCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { AdvancedSearch } from "@/components/AdvancedSearch";
 import { bookService } from "@/services/bookService";
 import { categoryService, Category } from "@/services/categoryService";
 
@@ -23,10 +22,17 @@ interface Book {
 }
 
 const Home = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [searchFilters, setSearchFilters] = useState({
+    query: "",
+    category: "all",
+    language: "all",
+    yearFrom: "",
+    yearTo: "",
+    author: "",
+  });
 
   // ------------------ Load books ------------------
   const loadBooks = async () => {
@@ -54,24 +60,48 @@ const Home = () => {
     loadCategories();
   }, []);
 
-  // ------------------ Filtered books ------------------
-  const filteredBooks = books.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.description.toLowerCase().includes(searchQuery.toLowerCase());
+  // ------------------ Apply filters ------------------
+  useEffect(() => {
+    let result = books;
 
-    const matchesCategory =
-      selectedCategory === "all" || book.category_id === selectedCategory;
+    // Search query
+    if (searchFilters.query) {
+      result = result.filter(
+        (book) =>
+          book.title.toLowerCase().includes(searchFilters.query.toLowerCase()) ||
+          book.author.toLowerCase().includes(searchFilters.query.toLowerCase()) ||
+          book.description.toLowerCase().includes(searchFilters.query.toLowerCase())
+      );
+    }
 
-    return matchesSearch && matchesCategory;
-  });
+    // Category filter
+    if (searchFilters.category !== "all") {
+      result = result.filter((book) => book.category_id === searchFilters.category);
+    }
 
-  // ------------------ Update counts for categories ------------------
-  const categoriesWithCount = categories.map((cat) => ({
-    ...cat,
-    count: cat.id === "all" ? books.length : books.filter((b) => b.category_id === cat.id).length,
-  }));
+    // Language filter
+    if (searchFilters.language !== "all") {
+      result = result.filter((book) => book.language === searchFilters.language);
+    }
+
+    // Author filter
+    if (searchFilters.author) {
+      result = result.filter((book) =>
+        book.author.toLowerCase().includes(searchFilters.author.toLowerCase())
+      );
+    }
+
+    // Year range filter
+    if (searchFilters.yearFrom) {
+      result = result.filter((book) => book.year && book.year >= parseInt(searchFilters.yearFrom));
+    }
+    if (searchFilters.yearTo) {
+      result = result.filter((book) => book.year && book.year <= parseInt(searchFilters.yearTo));
+    }
+
+    setFilteredBooks(result);
+  }, [books, searchFilters]);
+
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -86,43 +116,16 @@ const Home = () => {
           <p className="text-lg md:text-xl mb-8 opacity-90">
             دسترسی آنلاین به هزاران کتاب علمی و تخصصی
           </p>
-          {/* Search Section */}
-            <div className="max-w-2xl mx-auto">
-              <div className="relative">
-                {/* آیکون سرچ */}
-                <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                
-                {/* Input کنترل‌شده */}
-                <input
-                  type="search"
-                  placeholder="جستجوی کتاب، نویسنده، موضوع..."
-                  value={searchQuery} // متن سرچ رو نمایش میده
-                  onChange={(e) => setSearchQuery(e.target.value)} // آپدیت state
-                  className="w-full pr-12 h-12 text-lg rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary  text-black"
-                />
-              </div>
-            </div>
-
-
         </div>
       </section>
 
-        {/* Categories */}
-        <section className="py-8 border-b bg-muted/30">
+        {/* Advanced Search */}
+        <section className="py-8 bg-muted/30">
           <div className="container">
-            <div className="flex flex-wrap gap-2 justify-center">
-              {categoriesWithCount.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className="gap-2"
-                >
-                  {category.name}
-                  <span className="text-xs opacity-70">({category.count})</span>
-                </Button>
-              ))}
-            </div>
+            <AdvancedSearch 
+              categories={categories}
+              onSearch={setSearchFilters}
+            />
           </div>
         </section>
 

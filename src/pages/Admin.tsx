@@ -1,448 +1,438 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import { Header } from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, BookOpen, Trash2, Tags, Shield } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { categoryService, Category } from "@/services/categoryService";
 import { bookService } from "@/services/bookService";
-import { categoryService } from "@/services/categoryService";
+import { useNavigate } from "react-router-dom";
+import { Trash2, Plus, BookOpen, FolderOpen, Edit, TrendingUp } from "lucide-react";
+import { StatisticsCharts } from "@/components/admin/StatisticsCharts";
+import { DragDropUpload } from "@/components/admin/DragDropUpload";
+import { BookEditDialog } from "@/components/admin/BookEditDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  category_id: string | null;
+  language: string;
+  year: number | null;
+  pages: number | null;
+  cover_url: string | null;
+  pdf_url: string | null;
+  createdAt: string;
+}
 
 const Admin = () => {
-  const navigate = useNavigate();
-  const { isAuthenticated, isAdmin, logout } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<any[]>([]);
-  const [books, setBooks] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [books, setBooks] = useState<Book[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [language, setLanguage] = useState<string>("");
+  const [newCategoryDesc, setNewCategoryDesc] = useState("");
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
- // ---------------- Load Data ----------------
-const loadData = async () => {
-  try {
-    const cats = await categoryService.getAllCategories();
-    const bks = await bookService.getAllBooks();
-    setCategories(cats);
-    setBooks(bks);
-  } catch (err) {
-    console.error("❌ Error loading data:", err);
-  }
-};
-
-useEffect(() => {
-  loadData();
-}, []);
-
-  // ---------------- Handle Upload ----------------
-  const handleUpload = async (e: any) => {
-    e.preventDefault();
-
-    if (!isAuthenticated || !isAdmin) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "فقط ادمین می‌تواند این عملیات را انجام دهد" });
-      return;
-    }
-
-    const formData = new FormData(e.currentTarget);
-    const file = formData.get("file") as File;
-    const cover = formData.get("cover") as File;
-    const title = formData.get("title") as string;
-    const author = formData.get("author") as string;
-    const description = formData.get("description") as string;
-    const year = formData.get("year") as string;
-    const pages = formData.get("pages") as string;
-    const language = formData.get("language") as string;
-    const category_id = formData.get("category") as string;
-
-    if (!file || !cover) {
-      toast({ variant: "destructive", title: "لطفاً PDF و کاور را انتخاب کنید!" });
-      return;
-    }
-
+  // ------------------ بارگذاری کتاب‌ها ------------------
+  const loadBooks = async () => {
     try {
-      await bookService.addBookWithCover(
-        file,
-        cover,
-        title,
-        author,
-        description,
-        category_id,
-        language ? language : null,
-        year ? parseInt(year) : null,
-        pages ? parseInt(pages) : null
-      );
-
-      toast({ title: "موفق", description: "کتاب با کاور اضافه شد" });
-      loadData();
+      const data = await bookService.getAllBooks();
+      setBooks(data);
     } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در آپلود کتاب" });
+      console.error("Failed to load books:", err);
     }
   };
 
-  // ---------------- Add/Delete Category ----------------
+  // ------------------ بارگذاری دسته‌بندی‌ها ------------------
+  const loadCategories = async () => {
+    try {
+      const data = await categoryService.getAllCategories();
+      setCategories(data);
+    } catch (err) {
+      console.error("Failed to load categories:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadBooks();
+    loadCategories();
+  }, []);
+
+  // ------------------ ویرایش کتاب ------------------
+  const handleEditBook = (book: Book) => {
+    setEditingBook(book);
+    setEditDialogOpen(true);
+  };
+
+  // ------------------ افزودن دسته‌بندی ------------------
   const handleAddCategory = async () => {
-    if (!isAuthenticated || !isAdmin) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "فقط ادمین می‌تواند این عملیات را انجام دهد" });
+    if (!user || user.role !== "admin") {
+      toast({
+        title: "خطا",
+        description: "فقط مدیر می‌تواند دسته‌بندی اضافه کند",
+        variant: "destructive",
+      });
       return;
     }
-    if (!newCategoryName.trim()) return;
+
+    if (!newCategoryName.trim()) {
+      toast({
+        title: "خطا",
+        description: "لطفاً نام دسته‌بندی را وارد کنید",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await categoryService.createCategory(newCategoryName);
-      toast({ title: "موفق", description: "دسته‌بندی اضافه شد" });
+      toast({
+        title: "موفق",
+        description: "دسته‌بندی با موفقیت اضافه شد",
+      });
       setNewCategoryName("");
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در اضافه کردن دسته‌بندی" });
+      setNewCategoryDesc("");
+      loadCategories();
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در افزودن دسته‌بندی",
+        variant: "destructive",
+      });
     }
   };
 
+  // ------------------ حذف دسته‌بندی ------------------
   const handleDeleteCategory = async (id: string) => {
-    if (!isAuthenticated || !isAdmin) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "فقط ادمین می‌تواند این عملیات را انجام دهد" });
+    if (!user || user.role !== "admin") {
+      toast({
+        title: "خطا",
+        description: "فقط مدیر می‌تواند دسته‌بندی حذف کند",
+        variant: "destructive",
+      });
       return;
     }
+
     try {
-      await categoryService.deleteCategory(String(id));
-      toast({ title: "دسته‌بندی حذف شد" });
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در حذف دسته‌بندی" });
+      await categoryService.deleteCategory(id);
+      toast({
+        title: "موفق",
+        description: "دسته‌بندی حذف شد",
+      });
+      loadCategories();
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در حذف دسته‌بندی",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDeleteBook = async (id: string | number) => {
-    if (!isAuthenticated || !isAdmin) {
-      toast({ variant: "destructive", title: "دسترسی غیرمجاز", description: "فقط ادمین می‌تواند این عملیات را انجام دهد" });
+  // ------------------ حذف کتاب ------------------
+  const handleDeleteBook = async (id: string) => {
+    if (!user || user.role !== "admin") {
+      toast({
+        title: "خطا",
+        description: "فقط مدیر می‌تواند کتاب حذف کند",
+        variant: "destructive",
+      });
       return;
     }
-    try {
-      await bookService.deleteBook(String(id));
 
-      toast({ title: "کتاب حذف شد" });
-      loadData();
-    } catch (err) {
-      console.error(err);
-      toast({ variant: "destructive", title: "خطا در حذف کتاب" });
+    try {
+      await bookService.deleteBook(id);
+      toast({
+        title: "موفق",
+        description: "کتاب حذف شد",
+      });
+      loadBooks();
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در حذف کتاب",
+        variant: "destructive",
+      });
     }
   };
 
-
-  // ---------------- Stats ----------------
+  // آمار کتاب‌ها
   const totalBooks = books.length;
-  const totalCategories = categories.length;
-  const persianBooks = books.filter(b => b.language === "فارسی").length;
-  const englishBooks = books.filter(b => b.language === "انگلیسی").length;
+  const persianBooks = books.filter(b => b.language === 'fa').length;
+  const englishBooks = books.filter(b => b.language === 'en').length;
 
-  // ---------------- Render ----------------
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary via-primary/90 to-primary/80 py-12 shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20" />
-        <div className="container relative flex items-center gap-4">
-          <div className="p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-2xl">
-            <Shield className="h-10 w-10 text-white" />
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
+      <div className="container py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white mb-1">پنل مدیریت</h1>
-            <p className="text-white/80 text-lg">مدیریت هوشمند کتابخانه دیجیتال</p>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-l from-primary to-primary/60 bg-clip-text text-transparent">
+              پنل مدیریت
+            </h1>
+            <p className="text-muted-foreground">
+              مدیریت پیشرفته کتاب‌ها و آمار سیستم
+            </p>
           </div>
-          {!isAuthenticated && (
-            <div className="mr-auto bg-yellow-400/20 backdrop-blur-sm border border-yellow-400/30 rounded-lg px-4 py-2">
-              <p className="text-white text-sm">🔒 حالت مشاهده - برای ویرایش وارد شوید</p>
-            </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                مجموع کتاب‌ها
+              </CardTitle>
+              <BookOpen className="h-5 w-5 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">{totalBooks}</div>
+              <p className="text-xs text-muted-foreground mt-1">کتاب در سیستم</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20 hover:shadow-lg transition-all">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                دسته‌بندی‌ها
+              </CardTitle>
+              <FolderOpen className="h-5 w-5 text-secondary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-secondary">{categories.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">دسته فعال</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-all">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                کتاب‌های فارسی
+              </CardTitle>
+              <BookOpen className="h-5 w-5 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{persianBooks}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {totalBooks > 0 ? Math.round((persianBooks / totalBooks) * 100) : 0}% از کل
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg transition-all">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                کتاب‌های انگلیسی
+              </CardTitle>
+              <BookOpen className="h-5 w-5 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{englishBooks}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {totalBooks > 0 ? Math.round((englishBooks / totalBooks) * 100) : 0}% از کل
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {!user && (
+          <Card className="bg-yellow-50 border-yellow-200">
+            <CardContent className="pt-6">
+              <p className="text-center text-yellow-800">
+                شما در حالت مشاهده هستید. برای مدیریت کتاب‌ها، لطفاً وارد شوید.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* نمودارهای آماری */}
+        {user?.role === "admin" && (
+          <Card className="bg-gradient-to-br from-primary/5 to-background">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                آمار و نمودارها
+              </CardTitle>
+              <CardDescription>تحلیل آماری کتابخانه</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatisticsCharts books={books} categories={categories} />
+            </CardContent>
+          </Card>
+        )}
+
+        <Tabs defaultValue="upload" className="space-y-6">
+          {user?.role === "admin" && (
+            <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3">
+              <TabsTrigger value="upload">
+                آپلود کتاب
+              </TabsTrigger>
+              <TabsTrigger value="books">
+                مدیریت کتاب‌ها
+              </TabsTrigger>
+              <TabsTrigger value="categories">
+                دسته‌بندی‌ها
+              </TabsTrigger>
+            </TabsList>
           )}
-        </div>
-      </div>
 
-      <div className="container py-8 flex-1 space-y-8">
-        {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">مجموع کتاب‌ها</p>
-                  <p className="text-4xl font-bold text-primary">{totalBooks}</p>
-                </div>
-                <div className="p-4 bg-primary/10 rounded-2xl">
-                  <BookOpen className="h-8 w-8 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* آپلود کتاب */}
+          {user?.role === "admin" && (
+            <TabsContent value="upload">
+              <DragDropUpload 
+                categories={categories} 
+                onUploadSuccess={loadBooks}
+              />
+            </TabsContent>
+          )}
 
-          <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5 hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">دسته‌بندی‌ها</p>
-                  <p className="text-4xl font-bold text-purple-600">{totalCategories}</p>
+          {/* مدیریت کتاب‌ها */}
+          <TabsContent value="books">
+            <Card>
+              <CardHeader>
+                <CardTitle>لیست کتاب‌ها</CardTitle>
+                <CardDescription>{books.length} کتاب موجود</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {books.map((book) => {
+                    const categoryName = categories.find((c) => c.id === book.category_id)?.name || "نامشخص";
+                    return (
+                      <div
+                        key={book.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{book.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            نویسنده: {book.author} | دسته: {categoryName} | زبان: {book.language === 'fa' ? 'فارسی' : book.language === 'en' ? 'انگلیسی' : 'عربی'}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          {user?.role === "admin" && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditBook(book)}
+                              >
+                                <Edit className="w-4 h-4 ml-1" />
+                                ویرایش
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteBook(book.id)}
+                              >
+                                <Trash2 className="w-4 h-4 ml-1" />
+                                حذف
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="p-4 bg-purple-500/10 rounded-2xl">
-                  <Tags className="h-8 w-8 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card className="border-none shadow-lg bg-gradient-to-br from-green-500/10 to-green-600/5 hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">کتاب‌های فارسی</p>
-                  <p className="text-4xl font-bold text-green-600">{persianBooks}</p>
-                </div>
-                <div className="p-4 bg-green-500/10 rounded-2xl">
-                  <BookOpen className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500/10 to-orange-600/5 hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">کتاب‌های انگلیسی</p>
-                  <p className="text-4xl font-bold text-orange-600">{englishBooks}</p>
-                </div>
-                <div className="p-4 bg-orange-500/10 rounded-2xl">
-                  <BookOpen className="h-8 w-8 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="books" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8 h-12 bg-muted/50">
-            <TabsTrigger value="books" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <BookOpen className="h-4 w-4 ml-2" />
-              کتاب‌ها
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              <Tags className="h-4 w-4 ml-2" />
-              دسته‌بندی‌ها
-            </TabsTrigger>
-          </TabsList>
-
-          {/* BOOKS TAB */}
-          <TabsContent value="books" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <Card className="border-none shadow-xl bg-gradient-to-br from-card to-card/50">
-                  <CardHeader className="border-b bg-muted/30">
+          {/* مدیریت دسته‌بندی‌ها */}
+          {user?.role === "admin" && (
+            <TabsContent value="categories">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* افزودن دسته‌بندی */}
+                <Card className="bg-gradient-to-br from-background to-muted/20">
+                  <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Upload className="h-5 w-5 text-primary" />
-                      آپلود کتاب جدید
+                      <Plus className="w-5 h-5" />
+                      افزودن دسته‌بندی جدید
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-6">
-                    <form onSubmit={handleUpload} className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input name="title" placeholder="عنوان کتاب" required className="h-11" />
-                      <Input name="author" placeholder="نویسنده" required className="h-11" />
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="cat-name">نام دسته‌بندی</Label>
+                      <Input
+                        id="cat-name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                      />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input name="year" type="number" placeholder="سال انتشار" className="h-11" />
-                      <Input name="pages" type="number" placeholder="تعداد صفحات" className="h-11" />
+                    <div>
+                      <Label htmlFor="cat-desc">توضیحات</Label>
+                      <Textarea
+                        id="cat-desc"
+                        value={newCategoryDesc}
+                        onChange={(e) => setNewCategoryDesc(e.target.value)}
+                      />
                     </div>
-                    <Textarea name="description" placeholder="توضیحات و خلاصه کتاب..." required className="min-h-24 resize-none" />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* انتخاب دسته‌بندی */}
-                      <Select 
-                        value={selectedCategory} 
-                        onValueChange={setSelectedCategory} 
-                        name="category"
-                        required
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="انتخاب دسته‌بندی" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories.map(c => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      {/* انتخاب زبان */}
-                      <Select 
-                        value={language} 
-                        onValueChange={setLanguage} 
-                        name="language"
-                        required
-                      >
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="زبان کتاب" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="فارسی">🇮🇷 فارسی</SelectItem>
-                          <SelectItem value="انگلیسی">🇬🇧 انگلیسی</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium">تصویر جلد کتاب</label>
-                      <Input name="cover" type="file" accept="image/*" required className="h-11 cursor-pointer" />
-                    </div>
-
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium">فایل PDF کتاب</label>
-                      <Input name="file" type="file" accept="application/pdf" required className="h-11 cursor-pointer" />
-                    </div>
-
-                    <Button 
-                      className="w-full h-12 text-base shadow-lg hover:shadow-xl transition-all" 
-                      type="submit"
-                      disabled={!isAuthenticated || !isAdmin}
+                    <Button
+                      onClick={handleAddCategory}
+                      disabled={!newCategoryName}
+                      className="w-full"
                     >
-                      <Upload className="h-5 w-5 ml-2" />
-                      آپلود کتاب
+                      <Plus className="w-4 h-4 ml-2" />
+                      افزودن دسته‌بندی
                     </Button>
-                  </form>
+                  </CardContent>
+                </Card>
 
+                {/* لیست دسته‌بندی‌ها */}
+                <Card className="bg-gradient-to-br from-background to-muted/20">
+                  <CardHeader>
+                    <CardTitle>دسته‌بندی‌های موجود</CardTitle>
+                    <CardDescription>{categories.length} دسته فعال</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {categories.map((cat) => (
+                        <div
+                          key={cat.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div>
+                            <h3 className="font-medium">{cat.name}</h3>
+                            {cat.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {cat.description}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
-
-              <Card className="border-none shadow-xl bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="border-b bg-muted/30">
-                  <CardTitle className="flex items-center justify-between">
-                    <span>کتاب‌ها</span>
-                    <span className="text-2xl font-bold text-primary">{books.length}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[600px] overflow-y-auto p-4">
-                  {books.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>هنوز کتابی اضافه نشده است</p>
-                    </div>
-                  ) : (
-                    books.map(book => (
-                      <div 
-                        key={book.id} 
-                        className="flex items-center justify-between p-4 border rounded-xl bg-background/50 hover:bg-muted/50 transition-all duration-200 hover:shadow-md group"
-                      >
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm mb-1">{book.title}</p>
-                          <p className="text-xs text-muted-foreground flex items-center gap-2">
-                            <span>{book.author}</span>
-                            {book.language && (
-                              <>
-                                <span className="text-border">•</span>
-                                <span>{book.language}</span>
-                              </>
-                            )}
-                          </p>
-                        </div>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteBook(book.id)}
-                          disabled={!isAuthenticated || !isAdmin}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* CATEGORIES TAB */}
-          <TabsContent value="categories" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="border-none shadow-xl bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="border-b bg-muted/30">
-                  <CardTitle className="flex items-center gap-2">
-                    <Tags className="h-5 w-5 text-primary" />
-                    افزودن دسته‌بندی
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <Input 
-                    placeholder="نام دسته‌بندی جدید" 
-                    value={newCategoryName} 
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    className="h-11"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newCategoryName.trim()) {
-                        handleAddCategory();
-                      }
-                    }}
-                  />
-                  <Button 
-                    type="button" 
-                    className="w-full h-11 shadow-lg hover:shadow-xl transition-all" 
-                    onClick={handleAddCategory}
-                    disabled={!isAuthenticated || !isAdmin || !newCategoryName.trim()}
-                  >
-                    <Tags className="h-4 w-4 ml-2" />
-                    افزودن دسته‌بندی
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-none shadow-xl bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="border-b bg-muted/30">
-                  <CardTitle className="flex items-center justify-between">
-                    <span>لیست دسته‌بندی‌ها</span>
-                    <span className="text-2xl font-bold text-primary">{categories.length}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[600px] overflow-y-auto p-4">
-                  {categories.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Tags className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>هنوز دسته‌بندی اضافه نشده است</p>
-                    </div>
-                  ) : (
-                    categories.map(category => (
-                      <div 
-                        key={category.id} 
-                        className="flex items-center justify-between p-4 border rounded-xl bg-background/50 hover:bg-muted/50 transition-all duration-200 hover:shadow-md group"
-                      >
-                        <p className="font-medium">{category.name}</p>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleDeleteCategory(category.id)}
-                          disabled={!isAuthenticated || !isAdmin}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          )}
         </Tabs>
+
+        {/* Book Edit Dialog */}
+        <BookEditDialog
+          book={editingBook}
+          categories={categories}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onSuccess={loadBooks}
+        />
       </div>
     </div>
   );
