@@ -23,8 +23,8 @@ Base.metadata.create_all(bind=engine)
 # پیکربندی اصلی اپلیکیشن
 # -------------------------
 app = FastAPI(
-    title="Sadralib Backend",
-    description="API مدیریت کتابخانه الکترونیک دانشگاه صدرالمتألهین",
+    title="Nexo-Library API",
+    description="API مدیریت کتابخانه الکترونیک Nexo-Library",
     version="1.0.0",
 )
 
@@ -54,7 +54,6 @@ app.add_middleware(SecurityHeadersMiddleware)
 origins = [
     "http://localhost:8080",
     "http://localhost:5173",
-    "https://sadralib.ir",
 ]
 
 app.add_middleware(
@@ -99,7 +98,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # -------------------------
 @app.get("/")
 def root():
-    return {"message": "Sadralib Backend is running!"}
+    return {"message": "Nexo-Library API is running"}
 
 
 # -------------------------

@@ -32,8 +32,8 @@ def create_book(db: Session, book: BookCreate, pdf_filename: str = None, cover_f
         year=book.year,
         pages=book.pages,
         category_id=book.category_id,
-        pdf_url=f"sadralib-backend/static/uploads/{pdf_filename}" if pdf_filename else None,
-        cover_url=f"sadralib-backend/static/uploads/{cover_filename}" if cover_filename else None
+        pdf_url=f"/static/uploads/{pdf_filename}" if pdf_filename else None,
+        cover_url=f"/static/uploads/{cover_filename}" if cover_filename else None
     )
     db.add(db_book)
     db.commit()

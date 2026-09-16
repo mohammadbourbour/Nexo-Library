@@ -22,17 +22,29 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-sadralib-backend/static/uploads
-# Ignore folders
+
+# Uploads and local media
+backend/static/uploads
+backend/uploads
+!backend/app/uploads/.keep
+
+# Python
 **/__pycache__/
 **/*.pyc
 **/*.pyo
 **/*.pyd
-# Ignore virtual environment folders
 venv/
 env/
 ENV/
 .venv/
-.env/
+
+# Secrets and environment files
 .env
-*/.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+secrets/
