@@ -1,4 +1,4 @@
-version: "3.8"
+# API + Postgres only. For the full stack (UI + API + DB) use the compose file at the repo root.
 services:
   db:
     image: postgres:15

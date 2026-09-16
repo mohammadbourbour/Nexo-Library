@@ -1,4 +1,5 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Empty VITE_API_URL (Docker nginx) uses same-origin /api. Unset falls back for local Vite.
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 
 export function resolveMediaUrl(url?: string | null, fallback = ""): string {
   if (!url) return fallback;

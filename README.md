@@ -73,13 +73,46 @@ Located in `backend/`: FastAPI, PostgreSQL, SQLAlchemy, Alembic, JWT cookies, an
 
 ## پیش‌نیازها / Prerequisites
 
-- Node.js 18+
-- Python 3.11+ (for the API)
-- PostgreSQL 15 (or Docker)
+- **یک فرمان با Docker:** Docker Engine **24+** و Compose **V2** (`docker compose`)
+- بدون Docker: Node.js 18+، Python 3.11+، PostgreSQL 15
 
 ---
 
-## راه‌اندازی Frontend / Frontend setup
+## یک فرمان / One command (Docker)
+
+```bash
+docker compose up --build
+```
+
+پس‌زمینه: `docker compose up --build -d`
+
+| سرویس | آدرس پیش‌فرض |
+| --- | --- |
+| UI (nginx + SPA) | http://localhost:8080 |
+| API | http://localhost:8000 |
+| PostgreSQL | localhost:5432 |
+
+مرورگر باید UI را روی **8080** باز کند. Nginx مسیر `/api` را به بک‌اند پروکسی می‌کند (کوکی JWT روی همان origin). `FRONTEND_URL` در Compose برابر origin عمومی UI است (`http://localhost:8080`).
+
+متغیرها (از جمله `JWT_SECRET` و `ADMIN_SECRET`) در `.env.example` نام‌گذاری شده‌اند. فایل `.env` را commit نکنید؛ بدون آن هم Compose با پیش‌فرض‌های توسعه بالا می‌آید:
+
+```bash
+cp .env.example .env   # اختیاری — برای بازنویسی اسرار و پورت‌ها
+```
+
+اولین ادمین (HTTP `/create-admin` در production غیرفعال است):
+
+```bash
+docker compose exec backend python create_admin.py --email admin@example.edu --password 'your-password' --name Admin
+```
+
+توقف: `docker compose down` — حجم‌های نام‌گذاری‌شده `postgres_data` و `uploads_data` داده و فایل‌ها را نگه می‌دارند.
+
+**English:** Docker Engine **24+** with Compose V2. `docker compose up --build` starts the UI on **8080**, the API on **8000**, and Postgres on **5432**. Open the UI origin in the browser; nginx proxies `/api` so JWT cookies and CORS (`FRONTEND_URL`) stay on that origin. Override `JWT_SECRET` and `ADMIN_SECRET` in `.env` (see `.env.example`; never commit secrets). First admin: `docker compose exec backend python create_admin.py --email admin@example.edu --password 'your-password' --name Admin`.
+
+---
+
+## راه‌اندازی Frontend / Frontend setup (بدون Docker / without Docker)
 
 ```bash
 cp .env.example .env
@@ -110,14 +143,16 @@ cp .env.example .env
 # Edit .env with your own secrets — never commit it
 ```
 
-### Docker Compose
+### Docker Compose (API + database only)
+
+Prefer the **root** `docker compose up --build` for the full stack. API-only:
 
 ```bash
 cd backend
 docker compose up --build
 ```
 
-Compose starts PostgreSQL and the API on port **8000**. Local compose defaults use database name `nexo_library` and user `nexo` (development placeholders only).
+That file starts PostgreSQL and the API on port **8000**. Local defaults use database name `nexo_library` and user `nexo` (development placeholders only).
 
 ### بدون Docker / Without Docker
 
@@ -243,7 +278,9 @@ OpenAPI docs (development): **http://localhost:8000/docs**
 │   ├── app/routers/         # auth, books, category, upload
 │   ├── app/models/          # SQLAlchemy models
 │   ├── app/crud/            # persistence
-│   └── docker-compose.yml
+│   └── docker-compose.yml   # API + Postgres only
+├── docker/frontend/         # nginx image for the built SPA
+├── docker-compose.yml       # full stack: UI + API + Postgres
 ├── .env.example
 └── backend/.env.example
 ```
