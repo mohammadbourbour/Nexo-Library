@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { bookService } from "@/services/bookService";
+import { resolveMediaUrl } from "@/config/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,7 +78,7 @@ const BookDetail = () => {
             <Card className="overflow-hidden sticky top-24">
               <div className="aspect-[3/4] bg-muted">
                 <img
-                  src={book.cover_url ? `/${book.cover_url}` : "/placeholder.svg"}
+                  src={resolveMediaUrl(book.cover_url, "/placeholder.svg")}
                   alt={book.title}
                   className="w-full h-full object-cover"
                 />
@@ -94,7 +95,7 @@ const BookDetail = () => {
                   </Button>
                 )}
                 {book.pdf_url && (
-                  <a href={`/${book.pdf_url}`} download>
+                  <a href={resolveMediaUrl(book.pdf_url)} download>
                     <Button variant="outline" className="w-full" size="lg">
                       <Download className="h-4 w-4 ml-2" />
                       دانلود PDF

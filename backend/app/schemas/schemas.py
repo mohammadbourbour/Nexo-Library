@@ -1,10 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
-# -------------------------
-# Base Book Schema
-# -------------------------
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
 class BookBase(BaseModel):
     title: str = Field(..., max_length=200)
     author: str = Field(..., max_length=100)
@@ -16,15 +15,11 @@ class BookBase(BaseModel):
     pdf_url: Optional[str] = None
     category_id: Optional[str] = None
 
-# -------------------------
-# Schema برای ایجاد کتاب
-# -------------------------
-class BookCreate(BookBase):
-    pass  # همه فیلدها از BookBase ارث‌بری می‌کنه
 
-# -------------------------
-# Schema برای بروزرسانی کتاب
-# -------------------------
+class BookCreate(BookBase):
+    pass
+
+
 class BookUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=200)
     author: Optional[str] = Field(None, max_length=100)
@@ -36,63 +31,91 @@ class BookUpdate(BaseModel):
     pdf_url: Optional[str] = None
     category_id: Optional[str] = None
 
-# -------------------------
-# Schema خروجی
-# -------------------------
+
 class BookOut(BookBase):
     id: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-
-# -------------------------
-# Schema برای ثبت‌نام و ورود
-# -------------------------
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
-    name: Optional[str] = None
+    password: str = Field(..., min_length=8, max_length=64)
+    name: Optional[str] = Field(None, min_length=2, max_length=50)
+
 
 class UserOut(BaseModel):
     id: int
     email: EmailStr
     name: Optional[str] = None
     role: str
-
-    class Config:
-        from_attributes = True  # pydantic v2 جایگزین orm_mode
+    model_config = ConfigDict(from_attributes=True)
 
 
-# -------------------------
-# Category Schemas
-# -------------------------
+class AuthUserResponse(BaseModel):
+    success: bool = True
+    user: UserOut
+
+
+class VerifyTokenResponse(BaseModel):
+    valid: bool
+    user: UserOut
+
+
 class CategoryBase(BaseModel):
     name: str
     description: Optional[str] = None
 
+
 class CategoryCreate(CategoryBase):
     pass
+
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
+
 class CategoryOut(CategoryBase):
     id: str
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
-        
-        
-from pydantic import BaseModel, EmailStr, Field, constr
 
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = constr(min_length=8, max_length=64)  # حداقل طول پسورد
-    name: str = constr(min_length=2, max_length=50)
+class SavedBookIn(BaseModel):
+    book_id: str
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str = constr(min_length=8, max_length=64)
+
+class ProgressIn(BaseModel):
+    page: int = Field(..., ge=1)
+
+
+class ProgressOut(BaseModel):
+    book_id: str
+    page: int
+    updated_at: Optional[datetime] = None
+    title: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuditEventOut(BaseModel):
+    id: int
+    actor_id: Optional[int] = None
+    action: str
+    entity_type: str
+    entity_id: Optional[str] = None
+    ip: Optional[str] = None
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AuditPageOut(BaseModel):
+    items: List[AuditEventOut]
+    page: int
+    page_size: int
+    total: int
+
+
+class ReadingStatOut(BaseModel):
+    book_id: str
+    title: str
+    unique_readers: int
+    last_activity: Optional[datetime] = None

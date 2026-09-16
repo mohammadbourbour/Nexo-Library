@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AdvancedSearch } from "@/components/AdvancedSearch";
 import { bookService } from "@/services/bookService";
 import { categoryService, Category } from "@/services/categoryService";
+import { resolveMediaUrl } from "@/config/api";
 
 interface Book {
   id: string;
@@ -156,8 +157,8 @@ const Home = () => {
                       key={book.id}
                       book={{
                         ...book,
-                        coverUrl: book.cover_url || "/placeholder.svg",
-                        pdfUrl: book.pdf_url || "/sample.pdf",
+                        coverUrl: resolveMediaUrl(book.cover_url, "/placeholder.svg"),
+                        pdfUrl: resolveMediaUrl(book.pdf_url, "/sample.pdf"),
                         category: categoryName,
                         tags: (book as any).tags || [],
                       }}

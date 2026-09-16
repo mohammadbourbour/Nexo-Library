@@ -8,6 +8,7 @@ import { savedBooksService } from "@/services/savedBooksService";
 import { useNavigate } from "react-router-dom";
 import { User, BookMarked, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { resolveMediaUrl } from "@/config/api";
 
 interface SavedBook {
   id: string;
@@ -148,8 +149,8 @@ const Profile = () => {
                         <BookCard
                           book={{
                             ...book,
-                            coverUrl: book.cover_url || "/placeholder.svg",
-                            pdfUrl: book.pdf_url || "/sample.pdf",
+                            coverUrl: resolveMediaUrl(book.cover_url, "/placeholder.svg"),
+                            pdfUrl: resolveMediaUrl(book.pdf_url, "/sample.pdf"),
                             category: "نامشخص",
                             tags: [],
                           }}

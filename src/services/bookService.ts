@@ -1,6 +1,4 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
-import { authService } from './authService';
-import { title } from 'process';
 
 class BookService {
   // ------------------ دریافت همه کتاب‌ها ------------------
@@ -33,7 +31,7 @@ class BookService {
     if (year !== undefined && year !== null) formData.append("year", year.toString());
     if (pages !== undefined && pages !== null) formData.append("pages", pages.toString());
   
-    const res = await fetch(`${API_BASE_URL}/api/upload/`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_UPLOAD_PDF}`, {
       method: "POST",
       body: formData,
       credentials: "include",

@@ -130,20 +130,31 @@ python create_db.py
 uvicorn app.main:app --reload --port 8000
 ```
 
-CORS allows `http://localhost:8080` and `http://localhost:5173`. Uploaded PDFs and covers are served from `/static`.
+CORS uses `FRONTEND_URL` (plus localhost origins in development). Uploaded covers are public at `/api/files/cover/{filename}`; PDFs require a logged-in session at `/api/files/pdf/{filename}`. OpenAPI (`/docs`) is disabled when `ENV=production`.
+
+Create the first production admin with:
+
+```bash
+cd backend
+python create_admin.py --email admin@example.edu --password 'your-password' --name Admin
+```
 
 ### متغیرهای محیطی Backend (فقط نام‌ها)
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | SQLAlchemy PostgreSQL URL |
-| `JWT_SECRET` | Signing key for access tokens |
+| `JWT_SECRET` | Signing key for access tokens (rejected if default/weak in production) |
 | `JWT_ALGORITHM` | JWT algorithm (example: `HS256`) |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime in minutes |
-| `UPLOAD_DIR` | Upload directory used by settings |
-| `FRONTEND_URL` | Frontend origin (documented for local/dev) |
-| `ADMIN_SECRET` | Required to create additional admins after the first one |
-| `ENV` | `development` or `production` (cookie/security related) |
+| `UPLOAD_DIR` | Upload directory (PDFs and covers stored outside the public static tree) |
+| `FRONTEND_URL` | Exact frontend origin for CORS and cookie-backed requests |
+| `ADMIN_SECRET` | Required to create additional admins in development (HTTP create-admin is disabled in production) |
+| `ENV` | `development` or `production` |
+| `ALLOWED_EMAIL_DOMAIN` | Optional; if set, signup emails must match this domain |
+| `ENABLE_SIGNUP` | Optional; set `false` to disable self-registration |
+| `MAX_PDF_SIZE_MB` | Academic PDF size limit (default 80) |
+| `MAX_COVER_SIZE_MB` | Cover image size limit (default 5) |
 
 Do not commit `.env` files or real secret values.
 
@@ -151,20 +162,18 @@ Do not commit `.env` files or real secret values.
 
 ## API
 
-Routers are mounted in `backend/app/main.py`.
+Routers are mounted in `backend/app/main.py`. Protected routes accept the JWT from the `access_token` **httpOnly cookie** or an `Authorization: Bearer` header. Admin checks use the user row in the database, not the JWT `role` claim.
 
 ### Auth — `/api/auth`
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `POST` | `/signup` | Rate-limited; creates a regular user |
-| `POST` | `/login` | OAuth2 password form (`username` = email); sets `access_token` cookie |
+| `POST` | `/signup` | Rate-limited; optional email-domain policy |
+| `POST` | `/login` | OAuth2 password form (`username` = email); sets `access_token` cookie (`Secure` in production) |
 | `POST` | `/logout` | Clears the cookie |
-| `GET` | `/verify` | Validates the current user |
+| `GET` | `/verify` | Cookie or Bearer; returns `{ valid, user }` |
 | `GET` | `/me` | Current user profile |
-| `POST` | `/create-admin` | First admin is open; later calls require `ADMIN_SECRET` |
-
-Login JSON does not return the JWT in the body; the frontend also sends `Authorization: Bearer` when it has a token in `localStorage`.
+| `POST` | `/create-admin` | Development only; after the first admin requires `admin_secret` or `ADMIN_SECRET`. Disabled in production — use `create_admin.py` |
 
 ### Books — `/api/books`
 
@@ -190,9 +199,34 @@ Login JSON does not return the JWT in the body; the frontend also sends `Authori
 
 | Method | Path | Auth |
 | --- | --- | --- |
-| `POST` | `/upload` | Admin; `multipart/form-data` (PDF + cover + book fields). Max file size 10 MB. |
+| `POST` | `/upload/` | Admin; `multipart/form-data` with PDF (`file` or `pdf`), `cover`, and book fields. PDF magic-byte check; PDF up to `MAX_PDF_SIZE_MB`, covers up to `MAX_COVER_SIZE_MB`. |
+| `POST` | `/uploads/cover` | Admin; cover image only, returns `{ url }` |
 
-OpenAPI docs: **http://localhost:8000/docs**
+### Files
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/api/files/pdf/{filename}` | Logged-in user |
+| `GET` | `/api/files/cover/{filename}` | Public |
+
+### Student library
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/api/saved-books` | Current user |
+| `POST` | `/api/saved-books` | Body `{ book_id }` |
+| `DELETE` | `/api/saved-books/{book_id}` | Current user |
+| `GET` | `/api/me/progress` | Current user (resume list) |
+| `PUT` | `/api/me/progress/{book_id}` | Body `{ page }`; throttled |
+
+### Admin reports — `/api/admin`
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/audit` | Admin; `page`, `page_size` |
+| `GET` | `/stats/reading` | Admin; unique readers per book (no student identity) |
+
+OpenAPI docs (development): **http://localhost:8000/docs**
 
 ---
 

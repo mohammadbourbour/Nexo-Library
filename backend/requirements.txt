@@ -5,8 +5,11 @@ psycopg2-binary
 alembic
 python-dotenv
 pydantic
+pydantic-settings
+email-validator
 passlib[bcrypt]
+bcrypt==4.0.1
 PyJWT
 python-multipart
-python-magic
+slowapi
 standard-imghdr

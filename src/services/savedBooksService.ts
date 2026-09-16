@@ -1,9 +1,9 @@
-import { API_BASE_URL } from '@/config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
 
 class SavedBooksService {
   // دریافت کتاب‌های ذخیره شده کاربر
   async getSavedBooks() {
-    const res = await fetch(`${API_BASE_URL}/api/saved-books`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SAVED_BOOKS}`, {
       credentials: 'include',
     });
 
@@ -13,7 +13,7 @@ class SavedBooksService {
 
   // افزودن کتاب به لیست ذخیره شده
   async saveBook(bookId: string) {
-    const res = await fetch(`${API_BASE_URL}/api/saved-books`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SAVED_BOOKS}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ book_id: bookId }),
@@ -30,7 +30,7 @@ class SavedBooksService {
 
   // حذف کتاب از لیست ذخیره شده
   async unsaveBook(bookId: string) {
-    const res = await fetch(`${API_BASE_URL}/api/saved-books/${bookId}`, {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SAVED_BOOK_BY_ID(bookId)}`, {
       method: 'DELETE',
       credentials: 'include',
     });
