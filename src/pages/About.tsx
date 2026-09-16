@@ -10,18 +10,18 @@ const About = () => {
       <div className="container py-12 flex-1">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">درباره کتابخانه الکترونیک</h1>
+            <h1 className="text-4xl font-bold mb-4">درباره Nexo-Library</h1>
             <p className="text-lg text-muted-foreground">
-              سامانه مدیریت کتابخانه الکترونیک دانشگاهی
+              سامانه مدیریت کتابخانه الکترونیک
             </p>
           </div>
 
           <Card className="mb-8">
             <CardContent className="p-8">
               <p className="text-lg leading-relaxed text-justify mb-6">
-                این کتابخانه الکترونیک با هدف فراهم آوردن دسترسی آسان و سریع
+                Nexo-Library با هدف فراهم آوردن دسترسی آسان و سریع
                 دانشجویان، اساتید و پژوهشگران به منابع علمی و کتاب‌های تخصصی راه‌اندازی
-                شده است و به‌عنوان زیرساخت دیجیتال یک کتابخانه دانشگاهی طراحی می‌شود.
+                شده است و به‌عنوان زیرساخت دیجیتال یک کتابخانه الکترونیک طراحی می‌شود.
               </p>
               <p className="text-lg leading-relaxed text-justify">
                 ماموریت ما ایجاد یک پلتفرم جامع و کاربرپسند برای مطالعه آنلاین،

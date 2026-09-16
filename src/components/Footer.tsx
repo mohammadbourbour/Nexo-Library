@@ -9,10 +9,10 @@ export const Footer = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <BookOpen className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold">کتابخانه الکترونیک</span>
+              <span className="text-lg font-bold">Nexo-Library</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              کتابخانه الکترونیک دانشگاهی — دسترسی آنلاین به منابع علمی و کتاب‌های دیجیتال
+              سامانه کتابخانه الکترونیک — دسترسی آنلاین به منابع علمی و کتاب‌های دیجیتال
             </p>
           </div>
 
@@ -57,7 +57,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} کتابخانه الکترونیک دانشگاهی — تمامی حقوق محفوظ است</p>
+          <p>© {new Date().getFullYear()} Nexo-Library — تمامی حقوق محفوظ است</p>
         </div>
       </div>
     </footer>

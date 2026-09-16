@@ -1,9 +1,8 @@
-# کتابخانه الکترونیک دانشگاهی
-# University e-Library
+# Nexo-Library
 
 <p align="center">
-  <strong>سامانه مدرن مدیریت کتابخانه الکترونیک دانشگاهی</strong><br />
-  <em>A modern university e-library for students, faculty, and administrators</em>
+  <strong>سامانه مدیریت کتابخانه الکترونیک</strong><br />
+  <em>Electronic library management for students, faculty, and administrators</em>
 </p>
 
 <p align="center">
@@ -18,7 +17,9 @@
 
 ## فارسی
 
-پلتفرمی برای **مدیریت کتابخانه الکترونیک دانشگاهی**: گردش‌کار ادمین ساده‌تر، و دسترسی آنلاین دانشجویان به منابع علمی و کتاب‌های دیجیتال.
+**Nexo-Library** پلتفرمی برای مدیریت کتابخانه الکترونیک است: گردش‌کار ادمین ساده‌تر، و دسترسی آنلاین دانشجویان به منابع علمی و کتاب‌های دیجیتال.
+
+معماری پروژه طوری طراحی شده که در آینده بتوان قابلیت‌های هوشمند مبتنی بر هوش مصنوعی و اتوماسیون‌های داخلی را بدون بازنویسی هسته اضافه کرد (برای مثال پیشنهاد منابع، طبقه‌بندی کمکی، یا گردش‌کارهای پس‌زمینه). این امکانات هنوز پیاده‌سازی نشده‌اند؛ لایه سرویس و API فعلی نقطه اتصال آن‌هاست.
 
 ### امکانات دانشجویان
 - جستجو در عنوان، نویسنده و توضیحات
@@ -47,7 +48,9 @@
 
 ## English
 
-A **university electronic library** for cataloguing and serving scientific resources and digital books. Administrators manage the collection; students search, filter, and read PDFs in the browser.
+**Nexo-Library** is an electronic library for cataloguing and serving scientific resources and digital books. Administrators manage the collection; students search, filter, and read PDFs in the browser.
+
+The codebase is structured so AI-assisted features and internal automations can be added later without replacing the core app—for example resource suggestions, assisted classification, or background workflows. Those capabilities are not shipped yet; current services and HTTP APIs are the intended extension points.
 
 ### Students
 - Search across titles, authors, and descriptions
@@ -114,7 +117,7 @@ cd backend
 docker compose up --build
 ```
 
-Compose starts PostgreSQL and the API on port **8000**. Local compose defaults use database name/user `elibrary` (development placeholders only).
+Compose starts PostgreSQL and the API on port **8000**. Local compose defaults use database name `nexo_library` and user `nexo` (development placeholders only).
 
 ### بدون Docker / Without Docker
 
@@ -219,4 +222,4 @@ MIT — see repository settings if a license file is added.
 
 ---
 
-<p align="center">Built for campus libraries · ساخته‌شده برای کتابخانه‌های دانشگاهی</p>
+<p align="center">Nexo-Library</p>

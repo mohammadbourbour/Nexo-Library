@@ -111,7 +111,7 @@ const Home = () => {
       <section className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground py-16">
         <div className="container text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            کتابخانه الکترونیک دانشگاهی
+            Nexo-Library
           </h1>
           <p className="text-lg md:text-xl mb-8 opacity-90">
             دسترسی آنلاین به هزاران کتاب علمی و تخصصی

@@ -21,7 +21,7 @@ const Contact = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">تماس با ما</h1>
             <p className="text-lg text-muted-foreground">
-              برای ارتباط با کتابخانه الکترونیک از راه‌های زیر استفاده کنید
+              برای ارتباط با Nexo-Library از راه‌های زیر استفاده کنید
             </p>
           </div>
 

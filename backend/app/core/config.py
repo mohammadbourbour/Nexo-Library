@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://elibrary:elibrary@localhost:5432/elibrary"
+    DATABASE_URL: str = "postgresql://nexo:nexo@localhost:5432/nexo_library"
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120

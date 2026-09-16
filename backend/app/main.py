@@ -23,8 +23,8 @@ Base.metadata.create_all(bind=engine)
 # پیکربندی اصلی اپلیکیشن
 # -------------------------
 app = FastAPI(
-    title="University e-Library API",
-    description="API مدیریت کتابخانه الکترونیک دانشگاهی",
+    title="Nexo-Library API",
+    description="API مدیریت کتابخانه الکترونیک Nexo-Library",
     version="1.0.0",
 )
 
@@ -98,7 +98,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # -------------------------
 @app.get("/")
 def root():
-    return {"message": "University e-Library API is running"}
+    return {"message": "Nexo-Library API is running"}
 
 
 # -------------------------

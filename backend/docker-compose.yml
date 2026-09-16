@@ -3,9 +3,9 @@ services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: elibrary
-      POSTGRES_PASSWORD: elibrary
-      POSTGRES_DB: elibrary
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: nexo
+      POSTGRES_DB: nexo_library
     volumes:
       - db_data:/var/lib/postgresql/data
     ports:

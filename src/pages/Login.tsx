@@ -84,10 +84,10 @@ if (result.success) {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
             <BookOpen className="h-10 w-10" />
-            <h1 className="text-3xl font-bold">کتابخانه الکترونیک</h1>
+            <h1 className="text-3xl font-bold">Nexo-Library</h1>
           </Link>
           <p className="text-muted-foreground mt-2">
-            University e-Library
+            کتابخانه الکترونیک
           </p>
         </div>
 
