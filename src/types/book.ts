@@ -6,10 +6,12 @@ export interface Book {
   category: string;
   tags: string[];
   language: string;
-  year: number;
-  pages: number;
-  coverUrl: string;
-  pdfUrl: string;
+  year: number | null;
+  pages: number | null;
+  coverUrl?: string | null;
+  cover_url?: string | null;
+  pdfUrl?: string | null;
+  pdf_url?: string | null;
   createdAt: string;
 }
 

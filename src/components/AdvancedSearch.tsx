@@ -54,7 +54,7 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
     onSearch(resetFilters);
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     filters.query !== "" ||
     filters.category !== "all" ||
     filters.language !== "all" ||
@@ -63,34 +63,35 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
     filters.author !== "";
 
   return (
-    <Card className="p-4 bg-gradient-to-br from-background to-muted/20">
+    <Card className="p-3 md:p-4">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={filters.query}
-              onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+              onChange={(e) => {
+                const next = { ...filters, query: e.target.value };
+                setFilters(next);
+                onSearch(next);
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="جستجوی کتاب، نویسنده، موضوع..."
-              className="pr-10"
+              className="pr-10 h-11 bg-muted/40 border-transparent focus-visible:border-input"
             />
           </div>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0">
+            <Button variant={isOpen ? "secondary" : "outline"} size="icon" className="h-11 w-11 shrink-0">
               <Filter className="w-4 h-4" />
             </Button>
           </CollapsibleTrigger>
-          <Button onClick={handleSearch} className="shrink-0">
-            جستجو
-          </Button>
         </div>
 
         <CollapsibleContent>
-          <div className="space-y-4 pt-4 border-t">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>دسته‌بندی</Label>
+          <div className="space-y-4 pt-4 mt-3 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">دسته‌بندی</Label>
                 <Select
                   value={filters.category}
                   onValueChange={(value) => setFilters({ ...filters, category: value })}
@@ -100,7 +101,7 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">همه دسته‌ها</SelectItem>
-                    {categories.map((cat) => (
+                    {categories.filter((cat) => cat.id !== "all").map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
                       </SelectItem>
@@ -109,8 +110,8 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
                 </Select>
               </div>
 
-              <div>
-                <Label>زبان</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">زبان</Label>
                 <Select
                   value={filters.language}
                   onValueChange={(value) => setFilters({ ...filters, language: value })}
@@ -127,8 +128,8 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
                 </Select>
               </div>
 
-              <div>
-                <Label>نویسنده</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">نویسنده</Label>
                 <Input
                   value={filters.author}
                   onChange={(e) => setFilters({ ...filters, author: e.target.value })}
@@ -137,9 +138,9 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>از سال</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">از سال</Label>
                 <Input
                   type="number"
                   value={filters.yearFrom}
@@ -147,8 +148,8 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
                   placeholder="1400"
                 />
               </div>
-              <div>
-                <Label>تا سال</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs">تا سال</Label>
                 <Input
                   type="number"
                   value={filters.yearTo}
@@ -158,16 +159,17 @@ export const AdvancedSearch = ({ categories, onSearch }: AdvancedSearchProps) =>
               </div>
             </div>
 
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                className="w-full"
-              >
-                <X className="w-4 h-4 ml-2" />
-                پاک کردن فیلترها
+            <div className="flex gap-2">
+              <Button onClick={handleSearch} className="flex-1">
+                اعمال فیلتر
               </Button>
-            )}
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={handleReset}>
+                  <X className="w-4 h-4 ml-2" />
+                  پاک کردن
+                </Button>
+              )}
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>

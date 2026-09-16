@@ -127,10 +127,10 @@ export const DragDropUpload = ({ categories, onUploadSuccess }: DragDropUploadPr
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+          className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all ${
             isDragging
-              ? "border-primary bg-primary/5 scale-[1.02]"
-              : "border-border hover:border-primary/50"
+              ? "border-primary bg-primary/10 shadow-soft"
+              : "border-border bg-muted/30 hover:border-primary/50 hover:bg-muted/50"
           }`}
         >
           <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
