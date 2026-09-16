@@ -1,295 +1,222 @@
-# کتابخانه الکترونیک دانشگاه صدرالمتألهین
+# کتابخانه الکترونیک دانشگاهی
+# University e-Library
 
-یک سیستم مدیریت کتابخانه الکترونیک مدرن با قابلیت خواندن PDF آنلاین، مدیریت کتاب‌ها و احراز هویت کاربران.
+<p align="center">
+  <strong>سامانه مدرن مدیریت کتابخانه الکترونیک دانشگاهی</strong><br />
+  <em>A modern university e-library for students, faculty, and administrators</em>
+</p>
 
-## ویژگی‌های اصلی
-
-### برای کاربران عادی
-- 📚 مشاهده و جستجوی کتاب‌ها
-- 📖 خواندن PDF آنلاین با قابلیت زوم و ناوبری بین صفحات
-- 🔍 فیلتر کردن بر اساس دسته‌بندی، زبان و سال انتشار
-- 💾 دانلود فایل PDF کتاب‌ها
-- 👤 ثبت‌نام و ورود به سیستم
-
-### برای مدیران
-- ➕ افزودن کتاب جدید
-- ✏️ ویرایش اطلاعات کتاب‌ها
-- 🗑️ حذف کتاب‌ها
-- 📤 آپلود فایل PDF و تصویر کاور
-- 📊 مدیریت دسته‌بندی‌ها
-
-## تکنولوژی‌های استفاده شده
-
-### Frontend
-- **React 18** - کتابخانه اصلی UI
-- **TypeScript** - تایپ‌سیف JavaScript
-- **Vite** - ابزار بیلد سریع
-- **Tailwind CSS** - فریمورک CSS
-- **Shadcn/ui** - کامپوننت‌های آماده UI
-- **React Router** - مدیریت روت‌ها
-- **React PDF** - نمایش و خواندن PDF
-- **Tanstack Query** - مدیریت state و cache
-- **Lucide React** - آیکون‌ها
-
-### Backend API (نیاز به پیاده‌سازی)
-پروژه آماده اتصال به بک‌اند پایتون است. تمام سرویس‌ها و endpoint‌ها تعریف شده‌اند.
-
-## نصب و راه‌اندازی
-
-### پیش‌نیازها
-- Node.js (نسخه 18 یا بالاتر)
-- npm یا bun
-
-### مراحل نصب
-
-1. کلون کردن پروژه:
-```bash
-git clone <YOUR_GIT_URL>
-cd <YOUR_PROJECT_NAME>
-```
-
-2. نصب وابستگی‌ها:
-```bash
-npm install
-# یا
-bun install
-```
-
-3. ایجاد فایل محیطی:
-```bash
-cp .env.example .env
-```
-
-4. تنظیم URL بک‌اند در فایل `.env`:
-```env
-VITE_API_URL=http://localhost:8000
-```
-
-5. اجرای پروژه در حالت توسعه:
-```bash
-npm run dev
-# یا
-bun dev
-```
-
-پروژه روی `http://localhost:5173` اجرا می‌شود.
-
-## ساختار پروژه
-
-```
-src/
-├── components/          # کامپوننت‌های قابل استفاده مجدد
-│   ├── ui/             # کامپوننت‌های پایه UI
-│   ├── BookCard.tsx    # کارت نمایش کتاب
-│   ├── Header.tsx      # هدر سایت
-│   └── Footer.tsx      # فوتر سایت
-├── contexts/           # React Context ها
-│   └── AuthContext.tsx # مدیریت احراز هویت
-├── pages/              # صفحات اصلی
-│   ├── Home.tsx        # صفحه اصلی
-│   ├── BookDetail.tsx  # جزئیات کتاب
-│   ├── ReadBook.tsx    # خواندن PDF
-│   ├── Admin.tsx       # پنل مدیریت
-│   ├── Login.tsx       # ورود و ثبت‌نام
-│   ├── About.tsx       # درباره ما
-│   └── Contact.tsx     # تماس با ما
-├── services/           # سرویس‌های API
-│   ├── authService.ts  # سرویس احراز هویت
-│   ├── bookService.ts  # سرویس کتاب‌ها
-│   └── adminService.ts # سرویس مدیریت
-├── config/             # تنظیمات
-│   └── api.ts         # تنظیمات API
-├── types/              # تعریف Type ها
-│   └── book.ts        # تایپ کتاب
-├── data/               # داده‌های موقت
-│   └── mockBooks.ts   # کتاب‌های نمونه
-└── lib/                # توابع کمکی
-    └── utils.ts       # توابع عمومی
-```
-
-## اتصال به بک‌اند پایتون
-
-### API Endpoints مورد نیاز
-
-پروژه انتظار دارد بک‌اند شما این endpoint‌ها را پیاده‌سازی کند:
-
-#### احراز هویت
-```
-POST   /api/auth/login      - ورود کاربر
-POST   /api/auth/signup     - ثبت‌نام کاربر
-POST   /api/auth/logout     - خروج کاربر
-GET    /api/auth/verify     - تایید توکن
-```
-
-#### کتاب‌ها
-```
-GET    /api/books           - دریافت لیست کتاب‌ها
-GET    /api/books/:id       - دریافت جزئیات یک کتاب
-GET    /api/books/:id/pdf   - دریافت فایل PDF کتاب
-```
-
-#### مدیریت (نیاز به توکن ادمین)
-```
-POST   /api/admin/books/create       - ایجاد کتاب جدید
-PUT    /api/admin/books/:id          - ویرایش کتاب
-DELETE /api/admin/books/:id          - حذف کتاب
-POST   /api/admin/upload/pdf         - آپلود PDF
-POST   /api/admin/upload/cover       - آپلود تصویر کاور
-```
-
-### فرمت داده‌ها
-
-#### User Object
-```typescript
-{
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "user";
-}
-```
-
-#### Book Object
-```typescript
-{
-  id: string;
-  title: string;
-  author: string;
-  description: string;
-  category: string;
-  tags: string[];
-  language: string;
-  year: number;
-  pages: number;
-  coverUrl: string;
-  pdfUrl: string;
-  createdAt: string;
-}
-```
-
-#### Login/Signup Response
-```typescript
-{
-  success: boolean;
-  token?: string;
-  user?: User;
-  error?: string;
-}
-```
-
-### احراز هویت با JWT
-
-بک‌اند باید از JWT token برای احراز هویت استفاده کند:
-
-1. بعد از login/signup موفق، توکن JWT برگردانده می‌شود
-2. Frontend توکن را در localStorage ذخیره می‌کند
-3. در درخواست‌های بعدی، توکن در header ارسال می‌شود:
-```
-Authorization: Bearer <token>
-```
-
-### مثال پیاده‌سازی با FastAPI
-
-```python
-from fastapi import FastAPI, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
-import jwt
-
-app = FastAPI()
-security = HTTPBearer()
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
-
-class LoginResponse(BaseModel):
-    success: bool
-    token: str = None
-    user: dict = None
-    error: str = None
-
-@app.post("/api/auth/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
-    # بررسی اعتبار کاربر در دیتابیس
-    # اگر معتبر بود، JWT token تولید کن
-    token = create_jwt_token(user_id, user_role)
-    return LoginResponse(
-        success=True,
-        token=token,
-        user={
-            "id": user_id,
-            "email": request.email,
-            "name": user_name,
-            "role": user_role
-        }
-    )
-
-@app.get("/api/books")
-async def get_books(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    # بررسی توکن
-    user = verify_token(credentials.credentials)
-    # برگرداندن لیست کتاب‌ها
-    return books
-```
-
-## CORS Configuration
-
-بک‌اند پایتون باید CORS را فعال کند:
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://your-domain.com"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-## بیلد برای تولید
-
-```bash
-npm run build
-# یا
-bun build
-```
-
-فایل‌های بیلد شده در پوشه `dist/` قرار می‌گیرند.
-
-## تست بیلد
-
-```bash
-npm run preview
-# یا
-bun preview
-```
-
-## دیپلوی در Lovable
-
-برای دیپلوی پروژه، به [Lovable](https://lovable.dev/projects/ffb28755-adc2-4522-bf49-1109ec0ec321) بروید و روی Share > Publish کلیک کنید.
-
-## اتصال دامنه سفارشی
-
-می‌توانید یک دامنه سفارشی به پروژه خود متصل کنید:
-- به Project > Settings > Domains بروید
-- روی Connect Domain کلیک کنید
-- [مستندات](https://docs.lovable.dev/features/custom-domain#custom-domain)
-
-## مشارکت در پروژه
-
-1. Fork کردن پروژه
-2. ایجاد branch جدید (`git checkout -b feature/AmazingFeature`)
-3. Commit کردن تغییرات (`git commit -m 'Add some AmazingFeature'`)
-4. Push کردن به branch (`git push origin feature/AmazingFeature`)
-5. باز کردن Pull Request
-
-## لایسنس
-
-این پروژه تحت لایسنس MIT منتشر شده است.
+<p align="center">
+  <img alt="React 18" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" />
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" />
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white" />
+</p>
 
 ---
 
-ساخته شده با ❤️ برای دانشگاه صدرالمتألهین
+## فارسی
+
+پلتفرمی برای **مدیریت کتابخانه الکترونیک دانشگاهی**: گردش‌کار ادمین ساده‌تر، و دسترسی آنلاین دانشجویان به منابع علمی و کتاب‌های دیجیتال.
+
+### امکانات دانشجویان
+- جستجو در عنوان، نویسنده و توضیحات
+- فیلتر پیشرفته بر اساس دسته، زبان و سال انتشار
+- مطالعه PDF در مرورگر با جابه‌جایی صفحه و بزرگ‌نمایی
+- ثبت‌نام، ورود و مشاهده جزئیات منابع
+
+### امکانات مدیران
+- پنل کامل برای بارگذاری، ویرایش و حذف منابع
+- دسته‌بندی منابع
+- احراز هویت و نقش ادمین برای مسیرهای مدیریتی
+
+### پشته فنی (Frontend)
+- **React 18** و **TypeScript**
+- **Vite**، **Tailwind CSS**، **shadcn/ui**
+- **React Router**، **TanStack Query**، **react-pdf**
+
+### پشته فنی (Backend)
+پیاده‌سازی واقعی در پوشه `backend/`:
+- **FastAPI** + **Uvicorn**
+- **PostgreSQL** با **SQLAlchemy** و **Alembic** (پوشه مهاجرت اختیاری)
+- احراز هویت **JWT** (توکن در کوکی `HttpOnly` پس از ورود)
+- ذخیره فایل روی دیسک در `static/uploads`
+
+---
+
+## English
+
+A **university electronic library** for cataloguing and serving scientific resources and digital books. Administrators manage the collection; students search, filter, and read PDFs in the browser.
+
+### Students
+- Search across titles, authors, and descriptions
+- Advanced filters: category, language, publication year
+- In-browser PDF reader with page navigation and zoom
+- Account signup and login
+
+### Administrators
+- Full panel to upload, edit, and delete resources
+- Category management
+- Role-based access for admin routes
+
+### Frontend stack
+React **18.3** + TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router, TanStack Query, and react-pdf.
+
+### Backend stack
+Located in `backend/`: FastAPI, PostgreSQL, SQLAlchemy, Alembic, JWT cookies, and local file storage under `static/uploads`.
+
+---
+
+## پیش‌نیازها / Prerequisites
+
+- Node.js 18+
+- Python 3.11+ (for the API)
+- PostgreSQL 15 (or Docker)
+
+---
+
+## راه‌اندازی Frontend / Frontend setup
+
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+The Vite dev server listens on **http://localhost:8080**.
+
+Environment variable (name only):
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Base URL of the FastAPI server (default in code: `http://127.0.0.1:8000`) |
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## راه‌اندازی Backend / Backend setup
+
+```bash
+cd backend
+cp .env.example .env
+# Edit .env with your own secrets — never commit it
+```
+
+### Docker Compose
+
+```bash
+cd backend
+docker compose up --build
+```
+
+Compose starts PostgreSQL and the API on port **8000**. Local compose defaults use database name/user `elibrary` (development placeholders only).
+
+### بدون Docker / Without Docker
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python create_db.py
+uvicorn app.main:app --reload --port 8000
+```
+
+CORS allows `http://localhost:8080` and `http://localhost:5173`. Uploaded PDFs and covers are served from `/static`.
+
+### متغیرهای محیطی Backend (فقط نام‌ها)
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | SQLAlchemy PostgreSQL URL |
+| `JWT_SECRET` | Signing key for access tokens |
+| `JWT_ALGORITHM` | JWT algorithm (example: `HS256`) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime in minutes |
+| `UPLOAD_DIR` | Upload directory used by settings |
+| `FRONTEND_URL` | Frontend origin (documented for local/dev) |
+| `ADMIN_SECRET` | Required to create additional admins after the first one |
+| `ENV` | `development` or `production` (cookie/security related) |
+
+Do not commit `.env` files or real secret values.
+
+---
+
+## API
+
+Routers are mounted in `backend/app/main.py`.
+
+### Auth — `/api/auth`
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/signup` | Rate-limited; creates a regular user |
+| `POST` | `/login` | OAuth2 password form (`username` = email); sets `access_token` cookie |
+| `POST` | `/logout` | Clears the cookie |
+| `GET` | `/verify` | Validates the current user |
+| `GET` | `/me` | Current user profile |
+| `POST` | `/create-admin` | First admin is open; later calls require `ADMIN_SECRET` |
+
+Login JSON does not return the JWT in the body; the frontend also sends `Authorization: Bearer` when it has a token in `localStorage`.
+
+### Books — `/api/books`
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/` | Public list (`category_id` query optional) |
+| `GET` | `/{book_id}` | Public detail |
+| `POST` | `/` | Admin — create metadata |
+| `PUT` | `/{book_id}` | Admin — update |
+| `DELETE` | `/{book_id}` | Admin — delete (`204`) |
+
+### Categories — `/api/categories`
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `GET` | `/` | Public |
+| `GET` | `/{category_id}` | Public |
+| `POST` | `/` | Admin |
+| `PUT` | `/{category_id}` | Admin |
+| `DELETE` | `/{category_id}` | Admin |
+
+### Upload — `/api`
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| `POST` | `/upload` | Admin; `multipart/form-data` (PDF + cover + book fields). Max file size 10 MB. |
+
+OpenAPI docs: **http://localhost:8000/docs**
+
+---
+
+## ساختار پروژه / Project layout
+
+```
+├── src/                     # React + TypeScript UI
+│   ├── components/          # Header, Footer, BookCard, admin widgets, UI kit
+│   ├── pages/               # Home, reader, admin, auth, about, contact
+│   ├── services/            # auth, books, admin, categories
+│   ├── contexts/            # AuthContext
+│   └── config/api.ts        # API base URL and paths
+├── backend/                 # FastAPI application
+│   ├── app/routers/         # auth, books, category, upload
+│   ├── app/models/          # SQLAlchemy models
+│   ├── app/crud/            # persistence
+│   └── docker-compose.yml
+├── .env.example
+└── backend/.env.example
+```
+
+---
+
+## مجوز / License
+
+MIT — see repository settings if a license file is added.
+
+---
+
+<p align="center">Built for campus libraries · ساخته‌شده برای کتابخانه‌های دانشگاهی</p>

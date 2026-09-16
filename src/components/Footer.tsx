@@ -9,10 +9,10 @@ export const Footer = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <BookOpen className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold">کتابخانه صدرا</span>
+              <span className="text-lg font-bold">کتابخانه الکترونیک</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              کتابخانه الکترونیک دانشگاه صدرالمتألهین - دسترسی آنلاین به منابع علمی و کتاب‌های دانشگاهی
+              کتابخانه الکترونیک دانشگاهی — دسترسی آنلاین به منابع علمی و کتاب‌های دیجیتال
             </p>
           </div>
 
@@ -42,7 +42,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                <span>تهران، دانشگاه صدرالمتألهین</span>
+                <span>پردیس دانشگاه، ساختمان کتابخانه مرکزی</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -50,14 +50,14 @@ export const Footer = () => {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>library@sadra.ac.ir</span>
+                <span>library@example.com</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} کتابخانه صدرا - تمامی حقوق محفوظ است</p>
+          <p>© {new Date().getFullYear()} کتابخانه الکترونیک دانشگاهی — تمامی حقوق محفوظ است</p>
         </div>
       </div>
     </footer>

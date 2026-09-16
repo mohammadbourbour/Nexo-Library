@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://sadra:sadra_pass@localhost:5432/sadralib"
+    DATABASE_URL: str = "postgresql://elibrary:elibrary@localhost:5432/elibrary"
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 120

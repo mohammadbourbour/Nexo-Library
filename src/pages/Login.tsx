@@ -87,7 +87,7 @@ if (result.success) {
             <h1 className="text-3xl font-bold">کتابخانه الکترونیک</h1>
           </Link>
           <p className="text-muted-foreground mt-2">
-            دانشگاه صدرالمتألهین
+            University e-Library
           </p>
         </div>
 

@@ -21,7 +21,7 @@ const Contact = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">تماس با ما</h1>
             <p className="text-lg text-muted-foreground">
-              برای ارتباط با کتابخانه صدرا از راه‌های زیر استفاده کنید
+              برای ارتباط با کتابخانه الکترونیک از راه‌های زیر استفاده کنید
             </p>
           </div>
 
@@ -74,7 +74,7 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold text-lg mb-2">آدرس</h3>
                       <p className="text-muted-foreground">
-                        تهران، خیابان انقلاب، دانشگاه صدرالمتألهین
+                        پردیس دانشگاه، خیابان اصلی پردیس
                         <br />
                         ساختمان مرکزی، طبقه دوم، کتابخانه مرکزی
                       </p>
@@ -110,9 +110,9 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold text-lg mb-2">ایمیل</h3>
                       <p className="text-muted-foreground">
-                        library@sadra.ac.ir
+                        library@example.com
                         <br />
-                        support@sadralib.ir
+                        support@example.com
                       </p>
                     </div>
                   </div>

@@ -44,10 +44,10 @@ export const Header = ({ onSearch, categories = [] }: HeaderProps) => {
           <BookOpen className="h-6 w-6 text-primary" />
           <div className="flex flex-col">
             <span className="text-base md:text-lg font-bold text-primary">
-              کتابخانه صدرا
+              کتابخانه الکترونیک
             </span>
             <span className="text-xs md:text-sm text-muted-foreground">
-              دانشگاه صدرالمتألهین
+              University e-Library
             </span>
           </div>
         </Link>
