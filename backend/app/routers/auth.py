@@ -1,171 +1,149 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordRequestForm
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-import jwt
-from app.db.session import get_db
-from app.models.models import User
-from app.schemas.schemas import UserCreate, UserOut
-from app.core.config import settings
-from app.deps import get_current_user
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
-from app.db.session import get_db
-from app.models.models import User
-from app.core.config import settings
-from app.core.security import get_password_hash, create_access_token
-from datetime import timedelta
-from slowapi import Limiter
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
-import os
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
+from sqlalchemy.orm import Session
 
-IS_PROD = os.getenv("ENV", "development") == "production"
-
+from app.core.audit import record_audit
+from app.core.config import settings
+from app.core.limiter import limiter
+from app.core.security import (
+    clear_access_cookie,
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    set_access_cookie,
+    verify_password,
+)
+from app.db.session import get_db
+from app.models.models import User
+from app.schemas.schemas import AuthUserResponse, UserCreate, UserOut, VerifyTokenResponse
 
 router = APIRouter(tags=["auth"])
-limiter = Limiter(key_func=lambda request: request.client.host)  # یا get_remote_address
+
+LOGIN_ERROR = "Incorrect email or password"
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def _email_allowed(email: str) -> bool:
+    domain = settings.ALLOWED_EMAIL_DOMAIN
+    if not domain:
+        return True
+    suffix = "@" + domain.lower().lstrip("@")
+    return email.lower().endswith(suffix)
 
-# -------------------------
-# توکن JWT ایجاد کن
-# -------------------------
-def create_access_token(data: dict, expires_delta: timedelta = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return encoded_jwt
 
-# -------------------------
-# ثبت‌نام کاربر جدید
-# -------------------------
+@router.post("/signup", response_model=AuthUserResponse)
 @limiter.limit("5/minute")
-@router.post("/signup", response_model=UserOut)
 def signup(request: Request, user_in: UserCreate, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
+    if not settings.ENABLE_SIGNUP:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Signup is disabled")
+    if not _email_allowed(user_in.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email domain is not allowed",
+        )
+    existing = db.query(User).filter(User.email == user_in.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    hashed_password = pwd_context.hash(user_in.password)
-    user = User(email=user_in.email, name=user_in.name, hashed_password=hashed_password)
+    user = User(
+        email=user_in.email,
+        name=user_in.name,
+        hashed_password=get_password_hash(user_in.password),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return {"success": True, "user": user}
 
-# -------------------------
-# ورود و دریافت توکن
-# -------------------------
-from fastapi.responses import JSONResponse
 
 @router.post("/login")
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    if not user or not user.is_active or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail=LOGIN_ERROR)
 
-    access_token = create_access_token({"sub": str(user.id), "role": user.role})
-
-    # ✅ ست کردن کوکی
+    access_token = create_access_token({"sub": str(user.id)})
     response = JSONResponse(
-        content={"success": True, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}} 
+        content={
+            "success": True,
+            "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role},
+        }
     )
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        samesite="lax",
-        path="/"
-    )
+    set_access_cookie(response, access_token)
     return response
+
 
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie(key="access_token", path="/")
+    clear_access_cookie(response)
     return {"success": True, "message": "Logged out successfully"}
-# -------------------------
 
-@router.get("/verify")
-async def verify_token(current_user: dict = Depends(get_current_user)):
-    """
-    Verify JWT token and return user info if valid.
-    """
+
+@router.get("/verify", response_model=VerifyTokenResponse)
+def verify_token(current_user: User = Depends(get_current_user)):
     return {"valid": True, "user": current_user}
-# -------------------------
-# مسیر تستی برای کاربر جاری
-# -------------------------
+
+
 @router.get("/me", response_model=UserOut)
-def get_me(current_user=Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-
-
-# schema برای درخواست ساخت ادمین
 class CreateAdminRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, max_length=64)
     name: str | None = None
-    ADMIN_SECRET: str | None = None  # در صورتی که بخواهیم پس از اولین ادمین از secret استفاده کنیم
+    admin_secret: str | None = Field(
+        None, validation_alias=AliasChoices("admin_secret", "ADMIN_SECRET")
+    )
 
-@limiter.limit("5/minute")
+
 @router.post("/create-admin")
+@limiter.limit("5/minute")
 def create_admin(request: Request, payload: CreateAdminRequest, db: Session = Depends(get_db)):
-    """
-    ایجاد ادمین سیستم
-    - در اولین بار بدون نیاز به secret ساخته می‌شود.
-    - پس از آن، فقط با وارد کردن admin_secret معتبر امکان ساخت ادمین جدید وجود دارد.
-    """
-    existing_admin = db.query(User).filter(User.role == "admin").first()
+    if settings.is_production:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    # اگر ادمین از قبل وجود دارد، برای ایجاد ادمین جدید باید secret معتبر باشد
+    existing_admin = db.query(User).filter(User.role == "admin").first()
     if existing_admin:
-        if not payload.admin_secret:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Admin secret is required to create another admin."
-            )
-        if payload.admin_secret != settings.ADMIN_SECRET:
+        if not payload.admin_secret or payload.admin_secret != settings.ADMIN_SECRET:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid admin secret."
+                detail="Invalid admin secret.",
             )
 
-    # بررسی وجود ایمیل تکراری
     existing_user = db.query(User).filter(User.email == payload.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered."
+            detail="Email already registered.",
         )
 
-    # هش کردن پسورد
-    hashed_pw = get_password_hash(payload.password)
-
-    # ساخت کاربر جدید با نقش ادمین
     user = User(
         email=payload.email,
-        hashed_password=hashed_pw,
+        hashed_password=get_password_hash(payload.password),
         name=payload.name,
-        role="admin"
+        role="admin",
     )
     db.add(user)
     db.commit()
     db.refresh(user)
-
-    # ساخت توکن برای ورود فوری ادمین
-    access_token = create_access_token(
-        data={"sub": str(user.id), "role": user.role},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    record_audit(
+        db,
+        actor=user,
+        action="create",
+        entity_type="admin",
+        entity_id=str(user.id),
+        request=request,
     )
-
-    return {"success": True, "token": access_token, "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role}}
-
-
+    return {
+        "success": True,
+        "user": {"id": user.id, "email": user.email, "name": user.name, "role": user.role},
+    }

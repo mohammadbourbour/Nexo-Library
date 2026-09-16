@@ -1,6 +1,4 @@
 import { API_BASE_URL, API_ENDPOINTS } from '@/config/api';
-import { Book } from '@/types/book';
-import { authService } from './authService';
 
 export interface CreateBookData {
   title: string;
@@ -11,19 +9,44 @@ export interface CreateBookData {
   language?: string;
   year?: number;
   pages?: number;
-  cover_path?: string; // اگر فایل روی سرور باشه
-  pdf_path?: string;   // اگر فایل روی سرور باشه
+  cover_path?: string;
+  pdf_path?: string;
 }
 
 export interface UpdateBookData extends Partial<CreateBookData> {
   id: string;
 }
 
+export interface AuditEvent {
+  id: number;
+  actor_id: number | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  ip: string | null;
+  created_at: string;
+}
+
+export interface AuditPage {
+  items: AuditEvent[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface ReadingStat {
+  book_id: string;
+  title: string;
+  unique_readers: number;
+  last_activity: string | null;
+}
+
 class AdminService {
-  async createBook(bookData: CreateBookData): Promise<Book> {
+  async createBook(bookData: CreateBookData) {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_BOOK_CREATE}`, {
       method: 'POST',
       credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bookData),
     });
 
@@ -34,11 +57,12 @@ class AdminService {
     return await response.json();
   }
 
-  async updateBook(bookData: UpdateBookData): Promise<Book> {
+  async updateBook(bookData: UpdateBookData) {
     const { id, ...data } = bookData;
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_BOOK_UPDATE(id)}`, {
       method: 'PUT',
       credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
 
@@ -95,6 +119,23 @@ class AdminService {
       throw new Error(error.message || 'Failed to upload cover');
     }
     return await response.json();
+  }
+
+  async getAudit(page = 1, pageSize = 20): Promise<AuditPage> {
+    const res = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.ADMIN_AUDIT}?page=${page}&page_size=${pageSize}`,
+      { credentials: 'include' }
+    );
+    if (!res.ok) throw new Error('Failed to fetch audit log');
+    return res.json();
+  }
+
+  async getReadingStats(): Promise<ReadingStat[]> {
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.ADMIN_READING_STATS}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch reading stats');
+    return res.json();
   }
 }
 

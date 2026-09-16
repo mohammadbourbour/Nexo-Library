@@ -32,8 +32,8 @@ def create_book(db: Session, book: BookCreate, pdf_filename: str = None, cover_f
         year=book.year,
         pages=book.pages,
         category_id=book.category_id,
-        pdf_url=f"/static/uploads/{pdf_filename}" if pdf_filename else None,
-        cover_url=f"/static/uploads/{cover_filename}" if cover_filename else None
+        pdf_url=f"/api/files/pdf/{pdf_filename}" if pdf_filename else book.pdf_url,
+        cover_url=f"/api/files/cover/{cover_filename}" if cover_filename else book.cover_url,
     )
     db.add(db_book)
     db.commit()
@@ -49,7 +49,7 @@ def update_book(db: Session, book_id: str, book: BookUpdate) -> Optional[Book]:
     if not db_book:
         return None
 
-    for key, value in book.dict(exclude_unset=True).items():
+    for key, value in book.model_dump(exclude_unset=True).items():
         setattr(db_book, key, value)
 
     db.commit()

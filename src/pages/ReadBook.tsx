@@ -1,13 +1,15 @@
 import { useParams, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Download, ZoomIn, ZoomOut, ChevronRight, ChevronLeft } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-import { API_BASE_URL, API_ENDPOINTS } from "@/config/api";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+import { API_ENDPOINTS, resolveMediaUrl } from "@/config/api";
+import { API_BASE_URL } from "@/config/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { progressService } from "@/services/progressService";
 
-// تنظیم worker برای react-pdf
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 interface Book {
@@ -24,46 +26,62 @@ interface Book {
   tags?: string[];
 }
 
-const getFullUrl = (url?: string) => {
-  if (!url) return "";
-
-  // اگر مسیر با static/uploads شروع می‌شه و دوباره static/uploads اضافه شده، حذفش کن
-  const cleanedUrl = url.replace(/^\/?static\/uploads\//, "").replace(/^static\/uploads\//, "");
-
-  // مسیر نهایی: /{subfolder}/static/uploads/file.pdf
-  return `/${cleanedUrl}`;
-};
-
-
-
 const ReadBook = () => {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
+  const lastSavedPage = useRef<number | null>(null);
+  const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}/${id}`)
-      .then(res => {
+    fetch(`${API_BASE_URL}${API_ENDPOINTS.BOOKS}/${id}`, { credentials: "include" })
+      .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch book");
         return res.json();
       })
-      .then(data => {
+      .then((data) => {
         setBook(data);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
   }, [id]);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  useEffect(() => {
+    if (!isAuthenticated || !id) return;
+    progressService.list().then((items) => {
+      const match = items.find((item) => item.book_id === id);
+      if (match?.page) {
+        setPageNumber(match.page);
+        lastSavedPage.current = match.page;
+      }
+    }).catch(() => undefined);
+  }, [id, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !id || !book) return;
+    if (lastSavedPage.current === pageNumber) return;
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      progressService.save(id, pageNumber).then((saved) => {
+        if (saved) lastSavedPage.current = saved.page;
+      });
+    }, 1500);
+    return () => {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, [pageNumber, isAuthenticated, id, book]);
+
+  const onDocumentLoadSuccess = ({ numPages: total }: { numPages: number }) => {
+    setNumPages(total);
   };
 
   if (loading) {
@@ -91,9 +109,13 @@ const ReadBook = () => {
     );
   }
 
+  const pdfSrc = resolveMediaUrl(book.pdf_url);
+  const pdfFile = pdfSrc
+    ? { url: pdfSrc, withCredentials: true as const }
+    : null;
+
   return (
     <div className="min-h-screen bg-muted/30">
-      {/* Reader Header */}
       <header className="sticky top-0 z-50 border-b bg-background shadow-sm">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-4">
@@ -124,8 +146,8 @@ const ReadBook = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPageNumber(Math.min(numPages, pageNumber + 1))}
-              disabled={pageNumber >= numPages}
+              onClick={() => setPageNumber(Math.min(numPages || pageNumber, pageNumber + 1))}
+              disabled={numPages > 0 && pageNumber >= numPages}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -146,9 +168,9 @@ const ReadBook = () => {
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
-            {book.pdf_url && (
+            {pdfSrc && (
               <Button variant="outline" size="sm" asChild>
-                <a href={getFullUrl(book.pdf_url)} download>
+                <a href={pdfSrc} download>
                   <Download className="h-4 w-4 ml-1" />
                   دانلود
                 </a>
@@ -158,13 +180,12 @@ const ReadBook = () => {
         </div>
       </header>
 
-      {/* PDF Viewer Area */}
       <div className="container py-8">
         <div className="bg-background rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto">
           <div className="flex items-center justify-center p-4 bg-muted/30">
-            {book.pdf_url ? (
+            {pdfFile ? (
               <Document
-                file={getFullUrl(book.pdf_url)}
+                file={pdfFile}
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
                   <div className="flex items-center justify-center p-12">
@@ -179,7 +200,7 @@ const ReadBook = () => {
                     <div className="text-center">
                       <p className="text-destructive mb-4">خطا در بارگذاری PDF</p>
                       <p className="text-sm text-muted-foreground">
-                        لطفاً مطمئن شوید که فایل PDF معتبر است و به درستی آپلود شده است.
+                        برای مشاهده منابع دانشگاه باید وارد شوید.
                       </p>
                     </div>
                   </div>

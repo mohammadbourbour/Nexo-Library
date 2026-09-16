@@ -9,7 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { categoryService, Category } from "@/services/categoryService";
 import { bookService } from "@/services/bookService";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus, BookOpen, FolderOpen, Edit, TrendingUp } from "lucide-react";
+import { Trash2, Plus, BookOpen, FolderOpen, Edit, TrendingUp, ClipboardList } from "lucide-react";
+import { adminService, AuditEvent, ReadingStat } from "@/services/adminService";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatisticsCharts } from "@/components/admin/StatisticsCharts";
 import { DragDropUpload } from "@/components/admin/DragDropUpload";
 import { BookEditDialog } from "@/components/admin/BookEditDialog";
@@ -40,6 +42,10 @@ const Admin = () => {
   const [newCategoryDesc, setNewCategoryDesc] = useState("");
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [auditItems, setAuditItems] = useState<AuditEvent[]>([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditPage, setAuditPage] = useState(1);
+  const [readingStats, setReadingStats] = useState<ReadingStat[]>([]);
 
   // ------------------ بارگذاری کتاب‌ها ------------------
   const loadBooks = async () => {
@@ -61,10 +67,30 @@ const Admin = () => {
     }
   };
 
+  const loadReports = async (page = 1) => {
+    if (!user || user.role !== "admin") return;
+    try {
+      const [audit, stats] = await Promise.all([
+        adminService.getAudit(page, 20),
+        adminService.getReadingStats(),
+      ]);
+      setAuditItems(audit.items);
+      setAuditTotal(audit.total);
+      setAuditPage(audit.page);
+      setReadingStats(stats);
+    } catch (err) {
+      console.error("Failed to load admin reports:", err);
+    }
+  };
+
   useEffect(() => {
     loadBooks();
     loadCategories();
   }, []);
+
+  useEffect(() => {
+    loadReports(1);
+  }, [user]);
 
   // ------------------ ویرایش کتاب ------------------
   const handleEditBook = (book: Book) => {
@@ -271,7 +297,7 @@ const Admin = () => {
 
         <Tabs defaultValue="upload" className="space-y-6">
           {user?.role === "admin" && (
-            <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3">
+            <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
               <TabsTrigger value="upload">
                 آپلود کتاب
               </TabsTrigger>
@@ -280,6 +306,9 @@ const Admin = () => {
               </TabsTrigger>
               <TabsTrigger value="categories">
                 دسته‌بندی‌ها
+              </TabsTrigger>
+              <TabsTrigger value="reports">
+                سجل و مطالعه
               </TabsTrigger>
             </TabsList>
           )}
@@ -417,6 +446,113 @@ const Admin = () => {
                           </Button>
                         </div>
                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          )}
+
+          {user?.role === "admin" && (
+            <TabsContent value="reports">
+              <div className="grid grid-cols-1 gap-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="w-5 h-5" />
+                      آمار مطالعه (بدون هویت دانشجو)
+                    </CardTitle>
+                    <CardDescription>
+                      تعداد خواننده یکتا و آخرین فعالیت هر منبع
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {readingStats.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">هنوز پیشرفتی ثبت نشده است.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>کتاب</TableHead>
+                            <TableHead>خواننده یکتا</TableHead>
+                            <TableHead>آخرین فعالیت</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {readingStats.map((row) => (
+                            <TableRow key={row.book_id}>
+                              <TableCell>{row.title}</TableCell>
+                              <TableCell>{row.unique_readers}</TableCell>
+                              <TableCell>
+                                {row.last_activity
+                                  ? new Date(row.last_activity).toLocaleString("fa-IR")
+                                  : "—"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ClipboardList className="w-5 h-5" />
+                      سجل اعمال ادمین
+                    </CardTitle>
+                    <CardDescription>
+                      {auditTotal} رویداد ثبت‌شده
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {auditItems.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>زمان</TableHead>
+                            <TableHead>عمل</TableHead>
+                            <TableHead>نوع</TableHead>
+                            <TableHead>شناسه</TableHead>
+                            <TableHead>IP</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {auditItems.map((item) => (
+                            <TableRow key={item.id}>
+                              <TableCell>
+                                {new Date(item.created_at).toLocaleString("fa-IR")}
+                              </TableCell>
+                              <TableCell>{item.action}</TableCell>
+                              <TableCell>{item.entity_type}</TableCell>
+                              <TableCell className="font-mono text-xs">{item.entity_id}</TableCell>
+                              <TableCell>{item.ip || "—"}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                    <div className="flex justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={auditPage <= 1}
+                        onClick={() => loadReports(auditPage - 1)}
+                      >
+                        قبلی
+                      </Button>
+                      <span className="text-sm text-muted-foreground">صفحه {auditPage}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={auditPage * 20 >= auditTotal}
+                        onClick={() => loadReports(auditPage + 1)}
+                      >
+                        بعدی
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
