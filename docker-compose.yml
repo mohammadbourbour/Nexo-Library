@@ -20,6 +20,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
+      PYTHONUNBUFFERED: "1"
       DATABASE_URL: postgresql://${POSTGRES_USER:-nexo}:${POSTGRES_PASSWORD:-nexo}@db:5432/${POSTGRES_DB:-nexo_library}
       JWT_SECRET: ${JWT_SECRET:-replace-with-a-long-random-string}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
