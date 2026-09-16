@@ -73,123 +73,99 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <div className="container py-8">
-        {/* Header */}
-        <Card className="mb-8 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <CardHeader>
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-10 h-10 text-primary" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-3xl mb-2">{user.name}</CardTitle>
-                <p className="text-muted-foreground">{user.email}</p>
-                <div className="flex gap-2 mt-4">
-                  <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
-                    {user.role === 'admin' ? 'مدیر' : 'کاربر'}
-                  </span>
-                </div>
-              </div>
-              <Button variant="outline" onClick={logout}>
-                خروج از حساب
-              </Button>
+    <div className="container py-8">
+      <Card className="mb-8">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-hero text-primary-foreground flex items-center justify-center shadow-soft">
+              <User className="w-8 h-8" />
             </div>
-          </CardHeader>
-        </Card>
+            <div className="flex-1">
+              <CardTitle className="text-2xl mb-1">{user.name}</CardTitle>
+              <p className="text-muted-foreground">{user.email}</p>
+              <span className="inline-flex mt-3 px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm">
+                {user.role === "admin" ? "مدیر" : "کاربر"}
+              </span>
+            </div>
+            <Button variant="outline" onClick={logout}>
+              خروج از حساب
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
-        {/* Tabs */}
-        <Tabs defaultValue="library" className="space-y-6">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-            <TabsTrigger value="library" className="gap-2">
-              <BookMarked className="w-4 h-4" />
-              کتابخانه شخصی
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="w-4 h-4" />
-              تنظیمات
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="library" className="space-y-6">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
+          <TabsTrigger value="library" className="gap-2">
+            <BookMarked className="w-4 h-4" />
+            کتابخانه شخصی
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-2">
+            <Settings className="w-4 h-4" />
+            تنظیمات
+          </TabsTrigger>
+        </TabsList>
 
-          {/* کتابخانه شخصی */}
-          <TabsContent value="library">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookMarked className="w-5 h-5" />
-                  کتاب‌های ذخیره شده
-                  <span className="text-sm text-muted-foreground">
-                    ({savedBooks.length} کتاب)
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="w-12 h-12 border-4 border-t-primary border-gray-200 rounded-full animate-spin mx-auto"></div>
-                    <p className="text-muted-foreground mt-4">در حال بارگذاری...</p>
-                  </div>
-                ) : savedBooks.length === 0 ? (
-                  <div className="text-center py-12">
-                    <BookMarked className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-lg text-muted-foreground mb-2">
-                      هنوز کتابی ذخیره نکرده‌اید
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-6">
-                      برای ذخیره کتاب‌های مورد علاقه، به صفحه اصلی بروید
-                    </p>
-                    <Button onClick={() => navigate("/")}>
-                      مشاهده کتاب‌ها
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {savedBooks.map((book) => (
-                      <div key={book.id} className="relative group">
-                        <BookCard
-                          book={{
-                            ...book,
-                            coverUrl: resolveMediaUrl(book.cover_url, "/placeholder.svg"),
-                            pdfUrl: resolveMediaUrl(book.pdf_url, "/sample.pdf"),
-                            category: "نامشخص",
-                            tags: [],
-                          }}
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleUnsaveBook(book.id)}
-                          className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          حذف
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* تنظیمات */}
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>تنظیمات حساب کاربری</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      تنظیمات بیشتر به زودی اضافه خواهد شد
-                    </p>
-                  </div>
+        <TabsContent value="library">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <BookMarked className="w-5 h-5 text-primary" />
+              کتاب‌های ذخیره شده
+              <span className="text-sm font-normal text-muted-foreground">({savedBooks.length})</span>
+            </h2>
+          </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="w-10 h-10 border-2 border-muted border-t-primary rounded-full animate-spin mx-auto" />
+              <p className="text-muted-foreground mt-4">در حال بارگذاری...</p>
+            </div>
+          ) : savedBooks.length === 0 ? (
+            <div className="rounded-2xl border border-dashed bg-card/60 py-16 text-center">
+              <BookMarked className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-60" />
+              <p className="text-lg mb-2">هنوز کتابی ذخیره نکرده‌اید</p>
+              <p className="text-sm text-muted-foreground mb-6">از کاتالوگ کتاب‌های مورد علاقه را اضافه کنید</p>
+              <Button onClick={() => navigate("/")}>مشاهده کتاب‌ها</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {savedBooks.map((book) => (
+                <div key={book.id} className="relative group">
+                  <BookCard
+                    book={{
+                      ...book,
+                      coverUrl: resolveMediaUrl(book.cover_url, "/placeholder.svg"),
+                      pdfUrl: resolveMediaUrl(book.pdf_url, "/sample.pdf"),
+                      category: "ذخیره شده",
+                      tags: [],
+                    }}
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleUnsaveBook(book.id)}
+                    className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    حذف
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card>
+            <CardHeader>
+              <CardTitle>تنظیمات حساب کاربری</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 bg-muted/60 rounded-xl text-sm text-muted-foreground">
+                تنظیمات بیشتر به زودی اضافه خواهد شد
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

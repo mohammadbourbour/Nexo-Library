@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { categoryService, Category } from "@/services/categoryService";
 import { bookService } from "@/services/bookService";
-import { useNavigate } from "react-router-dom";
 import { Trash2, Plus, BookOpen, FolderOpen, Edit, TrendingUp, ClipboardList } from "lucide-react";
 import { adminService, AuditEvent, ReadingStat } from "@/services/adminService";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,7 +33,6 @@ interface Book {
 const Admin = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -196,72 +194,56 @@ const Admin = () => {
   const englishBooks = books.filter(b => b.language === 'en').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <div className="container py-8 space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-l from-primary to-primary/60 bg-clip-text text-transparent">
-              پنل مدیریت
-            </h1>
-            <p className="text-muted-foreground">
-              مدیریت پیشرفته کتاب‌ها و آمار سیستم
-            </p>
-          </div>
+    <div className="container py-8 space-y-8">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Nexo-Library</p>
+          <h1 className="text-3xl font-bold mb-1 tracking-tight">پنل مدیریت</h1>
+          <p className="text-muted-foreground">مدیریت کتاب‌ها، دسته‌ها و سجل سیستم</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                مجموع کتاب‌ها
-              </CardTitle>
-              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">مجموع کتاب‌ها</CardTitle>
+              <BookOpen className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{totalBooks}</div>
+              <div className="text-2xl font-bold tabular-nums">{totalBooks}</div>
               <p className="text-xs text-muted-foreground mt-1">کتاب در سیستم</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/20 hover:shadow-lg transition-all">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                دسته‌بندی‌ها
-              </CardTitle>
-              <FolderOpen className="h-5 w-5 text-secondary" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">دسته‌بندی‌ها</CardTitle>
+              <FolderOpen className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-secondary">{categories.length}</div>
+              <div className="text-2xl font-bold tabular-nums">{categories.length}</div>
               <p className="text-xs text-muted-foreground mt-1">دسته فعال</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 hover:shadow-lg transition-all">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                کتاب‌های فارسی
-              </CardTitle>
-              <BookOpen className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">فارسی</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{persianBooks}</div>
+              <div className="text-2xl font-bold tabular-nums">{persianBooks}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalBooks > 0 ? Math.round((persianBooks / totalBooks) * 100) : 0}% از کل
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20 hover:shadow-lg transition-all">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                کتاب‌های انگلیسی
-              </CardTitle>
-              <BookOpen className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">انگلیسی</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{englishBooks}</div>
+              <div className="text-2xl font-bold tabular-nums">{englishBooks}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {totalBooks > 0 ? Math.round((englishBooks / totalBooks) * 100) : 0}% از کل
               </p>
@@ -270,21 +252,20 @@ const Admin = () => {
         </div>
 
         {!user && (
-          <Card className="bg-yellow-50 border-yellow-200">
+          <Card className="border-primary/30 bg-primary/5">
             <CardContent className="pt-6">
-              <p className="text-center text-yellow-800">
+              <p className="text-center text-sm">
                 شما در حالت مشاهده هستید. برای مدیریت کتاب‌ها، لطفاً وارد شوید.
               </p>
             </CardContent>
           </Card>
         )}
 
-        {/* نمودارهای آماری */}
         {user?.role === "admin" && (
-          <Card className="bg-gradient-to-br from-primary/5 to-background">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <TrendingUp className="w-5 h-5 text-primary" />
                 آمار و نمودارها
               </CardTitle>
               <CardDescription>تحلیل آماری کتابخانه</CardDescription>
@@ -297,19 +278,11 @@ const Admin = () => {
 
         <Tabs defaultValue="upload" className="space-y-6">
           {user?.role === "admin" && (
-            <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4">
-              <TabsTrigger value="upload">
-                آپلود کتاب
-              </TabsTrigger>
-              <TabsTrigger value="books">
-                مدیریت کتاب‌ها
-              </TabsTrigger>
-              <TabsTrigger value="categories">
-                دسته‌بندی‌ها
-              </TabsTrigger>
-              <TabsTrigger value="reports">
-                سجل و مطالعه
-              </TabsTrigger>
+            <TabsList className="grid w-full max-w-3xl h-auto grid-cols-2 md:grid-cols-4 p-1">
+              <TabsTrigger value="upload" className="py-2">آپلود کتاب</TabsTrigger>
+              <TabsTrigger value="books" className="py-2">مدیریت کتاب‌ها</TabsTrigger>
+              <TabsTrigger value="categories" className="py-2">دسته‌بندی‌ها</TabsTrigger>
+              <TabsTrigger value="reports" className="py-2">سجل و مطالعه</TabsTrigger>
             </TabsList>
           )}
 
@@ -330,47 +303,47 @@ const Admin = () => {
                 <CardTitle>لیست کتاب‌ها</CardTitle>
                 <CardDescription>{books.length} کتاب موجود</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {books.map((book) => {
-                    const categoryName = categories.find((c) => c.id === book.category_id)?.name || "نامشخص";
-                    return (
-                      <div
-                        key={book.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{book.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            نویسنده: {book.author} | دسته: {categoryName} | زبان: {book.language === 'fa' ? 'فارسی' : book.language === 'en' ? 'انگلیسی' : 'عربی'}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
+              <CardContent className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>عنوان</TableHead>
+                      <TableHead>نویسنده</TableHead>
+                      <TableHead>دسته</TableHead>
+                      <TableHead>زبان</TableHead>
+                      {user?.role === "admin" && <TableHead className="text-left">عملیات</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {books.map((book) => {
+                      const categoryName = categories.find((c) => c.id === book.category_id)?.name || "نامشخص";
+                      return (
+                        <TableRow key={book.id}>
+                          <TableCell className="font-medium">{book.title}</TableCell>
+                          <TableCell>{book.author}</TableCell>
+                          <TableCell>{categoryName}</TableCell>
+                          <TableCell>
+                            {book.language === "fa" ? "فارسی" : book.language === "en" ? "انگلیسی" : "عربی"}
+                          </TableCell>
                           {user?.role === "admin" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditBook(book)}
-                              >
-                                <Edit className="w-4 h-4 ml-1" />
-                                ویرایش
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteBook(book.id)}
-                              >
-                                <Trash2 className="w-4 h-4 ml-1" />
-                                حذف
-                              </Button>
-                            </>
+                            <TableCell>
+                              <div className="flex gap-2 justify-end">
+                                <Button variant="outline" size="sm" onClick={() => handleEditBook(book)}>
+                                  <Edit className="w-4 h-4 ml-1" />
+                                  ویرایش
+                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleDeleteBook(book.id)}>
+                                  <Trash2 className="w-4 h-4 ml-1" />
+                                  حذف
+                                </Button>
+                              </div>
+                            </TableCell>
                           )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -380,10 +353,10 @@ const Admin = () => {
             <TabsContent value="categories">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* افزودن دسته‌بندی */}
-                <Card className="bg-gradient-to-br from-background to-muted/20">
+                <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-5 h-5 text-primary" />
                       افزودن دسته‌بندی جدید
                     </CardTitle>
                   </CardHeader>
@@ -416,7 +389,7 @@ const Admin = () => {
                 </Card>
 
                 {/* لیست دسته‌بندی‌ها */}
-                <Card className="bg-gradient-to-br from-background to-muted/20">
+                <Card>
                   <CardHeader>
                     <CardTitle>دسته‌بندی‌های موجود</CardTitle>
                     <CardDescription>{categories.length} دسته فعال</CardDescription>
@@ -561,7 +534,6 @@ const Admin = () => {
           )}
         </Tabs>
 
-        {/* Book Edit Dialog */}
         <BookEditDialog
           book={editingBook}
           categories={categories}
@@ -569,7 +541,6 @@ const Admin = () => {
           onOpenChange={setEditDialogOpen}
           onSuccess={loadBooks}
         />
-      </div>
     </div>
   );
 };

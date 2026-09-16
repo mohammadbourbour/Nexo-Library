@@ -19,7 +19,12 @@ interface StatisticsChartsProps {
   categories: Category[];
 }
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))', '#8884d8', '#82ca9d', '#ffc658', '#ff8042'];
+const COLORS = [
+  "hsl(var(--primary))",
+  "hsl(239 48% 42%)",
+  "hsl(192 45% 42%)",
+  "hsl(var(--muted-foreground))",
+];
 
 export const StatisticsCharts = ({ books, categories }: StatisticsChartsProps) => {
   // آماری زبان‌ها
@@ -48,7 +53,7 @@ export const StatisticsCharts = ({ books, categories }: StatisticsChartsProps) =
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* نمودار زبان‌ها */}
-      <Card className="bg-gradient-to-br from-background to-muted/20">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">توزیع زبان کتاب‌ها</CardTitle>
         </CardHeader>
@@ -76,7 +81,7 @@ export const StatisticsCharts = ({ books, categories }: StatisticsChartsProps) =
       </Card>
 
       {/* نمودار دسته‌بندی‌ها */}
-      <Card className="bg-gradient-to-br from-background to-muted/20">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">تعداد کتاب به تفکیک دسته‌بندی</CardTitle>
         </CardHeader>
@@ -94,7 +99,7 @@ export const StatisticsCharts = ({ books, categories }: StatisticsChartsProps) =
       </Card>
 
       {/* نمودار روند انتشار */}
-      <Card className="bg-gradient-to-br from-background to-muted/20 lg:col-span-2">
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="text-lg">روند انتشار کتاب‌ها (۵ سال اخیر)</CardTitle>
         </CardHeader>

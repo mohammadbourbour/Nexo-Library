@@ -11,46 +11,43 @@ import { BookOpen, Mail, Lock, User } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, signup, isAuthenticated } = useAuth();
+  const { login, signup, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
 
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [signupData, setSignupData] = useState({ email: "", password: "", name: "" });
   const [loading, setLoading] = useState(false);
 
-  // اگر کاربر لاگین باشه به صفحه اصلی برگردون
- const { user } = useAuth();
-
-useEffect(() => {
-  if (isAuthenticated && user) {
-    if (user.role === "admin") {
-      navigate("/admin");
-    } else {
-      navigate("/");
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     }
-  }
-}, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     const result: { success: boolean; error?: string; user?: { role: string } } = await login(loginData.username, loginData.password);
-    
+
     setLoading(false);
 
-if (result.success) {
-  toast({ title: "خوش آمدید", description: "با موفقیت وارد شدید" });
-  if (result.user?.role === "admin") {
-    navigate("/admin");
-  } else {
-    navigate("/");
-  }
-} else {
-  toast({
-    variant: "destructive",
-    title: "خطا",
-    description: result.error || "خطا در ورود",
+    if (result.success) {
+      toast({ title: "خوش آمدید", description: "با موفقیت وارد شدید" });
+      if (result.user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } else {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: result.error || "خطا در ورود",
       });
     }
   };
@@ -60,7 +57,7 @@ if (result.success) {
     setLoading(true);
 
     const result = await signup(signupData.email, signupData.password, signupData.name);
-    
+
     setLoading(false);
 
     if (result.success) {
@@ -79,19 +76,20 @@ if (result.success) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4">
-      <div className="w-full max-w-md">
+    <div className="relative min-h-[calc(100vh-8rem)] flex items-center justify-center p-4 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-hero opacity-[0.12]" />
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
-            <BookOpen className="h-10 w-10" />
-            <h1 className="text-3xl font-bold">Nexo-Library</h1>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-hero text-primary-foreground shadow-soft">
+              <BookOpen className="h-6 w-6" />
+            </span>
+            <h1 className="text-3xl font-bold text-foreground">Nexo-Library</h1>
           </Link>
-          <p className="text-muted-foreground mt-2">
-            کتابخانه الکترونیک
-          </p>
+          <p className="text-muted-foreground mt-2">ورود به کتابخانه الکترونیک</p>
         </div>
 
-        <Card>
+        <Card className="border-border/70">
           <CardHeader>
             <CardTitle className="text-2xl text-center">ورود به سیستم</CardTitle>
             <CardDescription className="text-center">
@@ -100,7 +98,7 @@ if (result.success) {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-2 mb-6 h-11">
                 <TabsTrigger value="login">ورود</TabsTrigger>
                 <TabsTrigger value="signup">ثبت‌نام</TabsTrigger>
               </TabsList>
@@ -114,7 +112,7 @@ if (result.success) {
                       <Input
                         id="login-email"
                         type="email"
-                        placeholder="example@university.edu"
+                        placeholder="you@example.com"
                         className="pr-10"
                         value={loginData.username}
                         onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
@@ -154,7 +152,7 @@ if (result.success) {
                       <Input
                         id="signup-name"
                         type="text"
-                        placeholder="علی احمدی"
+                        placeholder="نام کامل"
                         className="pr-10"
                         value={signupData.name}
                         onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
@@ -170,7 +168,7 @@ if (result.success) {
                       <Input
                         id="signup-email"
                         type="email"
-                        placeholder="example@university.edu"
+                        placeholder="you@example.com"
                         className="pr-10"
                         value={signupData.email}
                         onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}

@@ -86,9 +86,9 @@ const ReadBook = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-muted border-t-primary mx-auto mb-4" />
           <p className="text-muted-foreground">در حال بارگذاری کتاب...</p>
         </div>
       </div>
@@ -97,7 +97,7 @@ const ReadBook = () => {
 
   if (error || !book) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">کتاب یافت نشد</h2>
           <p className="text-muted-foreground mb-4">{error}</p>
@@ -113,25 +113,26 @@ const ReadBook = () => {
   const pdfFile = pdfSrc
     ? { url: pdfSrc, withCredentials: true as const }
     : null;
+  const progressValue = numPages > 0 ? Math.round((pageNumber / numPages) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-background shadow-sm">
-        <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-muted/40">
+      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-xl">
+        <div className="container flex h-14 items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Link to={`/book/${book.id}`}>
               <Button variant="ghost" size="sm">
                 <ArrowRight className="h-4 w-4 ml-1" />
                 بازگشت
               </Button>
             </Link>
-            <div>
-              <h1 className="font-semibold text-sm">{book.title}</h1>
-              <p className="text-xs text-muted-foreground">{book.author}</p>
+            <div className="min-w-0">
+              <h1 className="font-semibold text-sm truncate">{book.title}</h1>
+              <p className="text-xs text-muted-foreground truncate">{book.author}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             <Button
               variant="outline"
               size="sm"
@@ -140,8 +141,8 @@ const ReadBook = () => {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="text-sm min-w-[100px] text-center">
-              صفحه {pageNumber} از {numPages || "..."}
+            <span className="text-xs md:text-sm min-w-[88px] text-center tabular-nums">
+              {pageNumber} / {numPages || "…"}
             </span>
             <Button
               variant="outline"
@@ -151,20 +152,12 @@ const ReadBook = () => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="border-r pr-2 mr-2 flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setScale(Math.max(0.5, scale - 0.1))}
-              >
+            <div className="hidden sm:flex border-r pr-2 mr-2 items-center gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => setScale(Math.max(0.5, scale - 0.1))}>
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <span className="text-sm min-w-[60px] text-center">{Math.round(scale * 100)}%</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setScale(Math.min(2, scale + 0.1))}
-              >
+              <span className="text-xs min-w-[44px] text-center">{Math.round(scale * 100)}%</span>
+              <Button variant="outline" size="sm" onClick={() => setScale(Math.min(2, scale + 0.1))}>
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
@@ -172,17 +165,23 @@ const ReadBook = () => {
               <Button variant="outline" size="sm" asChild>
                 <a href={pdfSrc} download>
                   <Download className="h-4 w-4 ml-1" />
-                  دانلود
+                  <span className="hidden sm:inline">دانلود</span>
                 </a>
               </Button>
             )}
           </div>
         </div>
+        <div className="h-1 bg-muted">
+          <div
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${progressValue}%` }}
+          />
+        </div>
       </header>
 
-      <div className="container py-8">
-        <div className="bg-background rounded-lg shadow-lg overflow-hidden max-w-5xl mx-auto">
-          <div className="flex items-center justify-center p-4 bg-muted/30">
+      <div className="container py-6">
+        <div className="bg-card rounded-2xl shadow-soft overflow-hidden max-w-5xl mx-auto border">
+          <div className="flex items-center justify-center p-4 bg-muted/40">
             {pdfFile ? (
               <Document
                 file={pdfFile}
@@ -190,7 +189,7 @@ const ReadBook = () => {
                 loading={
                   <div className="flex items-center justify-center p-12">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                      <div className="animate-spin rounded-full h-10 w-10 border-2 border-muted border-t-primary mx-auto mb-4" />
                       <p className="text-muted-foreground">در حال بارگذاری PDF...</p>
                     </div>
                   </div>
@@ -200,7 +199,7 @@ const ReadBook = () => {
                     <div className="text-center">
                       <p className="text-destructive mb-4">خطا در بارگذاری PDF</p>
                       <p className="text-sm text-muted-foreground">
-                        برای مشاهده منابع دانشگاه باید وارد شوید.
+                        برای مشاهده منابع باید وارد شوید.
                       </p>
                     </div>
                   </div>
@@ -216,9 +215,7 @@ const ReadBook = () => {
               </Document>
             ) : (
               <div className="text-center p-12">
-                <p className="text-muted-foreground mb-4">
-                  فایل PDF برای این کتاب موجود نیست
-                </p>
+                <p className="text-muted-foreground mb-4">فایل PDF برای این کتاب موجود نیست</p>
               </div>
             )}
           </div>

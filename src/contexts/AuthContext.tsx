@@ -23,8 +23,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false); // برای انیمیشن
-
   // ✅ فقط یک بار اجرا، برای بررسی اعتبار کوکی
   useEffect(() => {
     const verifyAuth = async () => {
@@ -69,21 +67,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      setLoggingOut(true); // trigger انیمیشن
-      setTimeout(() => {
-        setUser(null);
-        window.location.href = "/login";
-      }, 600); // زمان انیمیشن
+      setUser(null);
+      window.location.href = "/login";
     }
   };
-
-  useEffect(() => {
-    if (loggingOut) {
-      document.body.classList.add("fade-out");
-    } else {
-      document.body.classList.remove("fade-out");
-    }
-  }, [loggingOut]);
 
   return (
     <AuthContext.Provider
